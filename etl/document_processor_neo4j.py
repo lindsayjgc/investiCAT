@@ -292,7 +292,10 @@ Document text:
                     except:
                         iso_date = f"{date_str}T00:00:00Z"
                     
-                    neo4j_data["nodes"]["dates"].append({"date": iso_date})
+                    neo4j_data["nodes"]["dates"].append({
+                        "id": date_id, 
+                        "date": iso_date
+                    })
                     
                     # Add Event -> Date relationship
                     neo4j_data["relationships"].append({
