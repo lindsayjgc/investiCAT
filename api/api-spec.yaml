@@ -5,7 +5,7 @@ info:
   description: API for managing cats (timeline), their documents, events, and related entities.
 
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:8000
     description: Local development server
 
 tags:

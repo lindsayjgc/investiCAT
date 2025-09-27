@@ -3,18 +3,16 @@ import { useParams } from 'react-router-dom';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { Timeline } from '@/components/Timeline';
 import { FilterPanel } from '@/components/FilterPanel';
-import { mockInvestigation } from '@/data/mockData';
 import { TimelineFilter } from '@/types/investigation';
 import { CatDto } from '@/client/types.gen';
 import { Button } from '@/components/ui/button';
 import { FileText, Clock, Users, Filter } from 'lucide-react';
 import { getUserByUserIdCatByCatId, postUserByUserIdCatByCatIdDocument } from '@/client';
 import { DEFAULT_USER_ID } from '@/App';
-import { get } from 'http';
 
 const Investigation = () => {
   const { id } = useParams<{ id: string }>();
-  const [cat, setCat] = useState<CatDto>();
+  const [cat, setCat] = useState<CatDto | undefined>(undefined);
   const [showUpload, setShowUpload] = useState(false);
   const [filter, setFilter] = useState<TimelineFilter>({
     entities: [],
@@ -25,10 +23,12 @@ const Investigation = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('Fetching investigation data for id:', id);
       const response = await getUserByUserIdCatByCatId({ path: { userId: DEFAULT_USER_ID, catId: id } });
       if (response && response.data) {
         setCat(response.data);
       }
+      console.log(response);
     };
     fetchData();
   }, [id]);
@@ -44,11 +44,11 @@ const Investigation = () => {
     );
   };
 
-  const filteredEventsCount = cat.events.filter(event => {
+  const filteredEventsCount = cat?.events.filter(event => {
     // Apply the same filtering logic as in Timeline component
     if (filter.entities.length > 0) {
       const hasFilteredEntity = event.entities.some(entity => 
-        filter.entities.includes(entity.id)
+        filter.entities.includes(entity.name)
       );
       if (!hasFilteredEntity) return false;
     }
@@ -79,10 +79,10 @@ const Investigation = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                {cat.title}
+                {cat?.title}
               </h1>
               <p className="text-muted-foreground mt-1">
-                {cat.description}
+                {cat?.description}
               </p>
             </div>
             <Button
@@ -118,7 +118,7 @@ const Investigation = () => {
             <div>
               <div className="text-2xl font-bold">{filteredEventsCount}</div>
               <div className="text-sm text-muted-foreground">
-                {filteredEventsCount === cat.events.length ? 'Events' : `of ${cat.events.length} Events`}
+                {filteredEventsCount === cat?.events.length ? 'Events' : `of ${cat?.events.length} Events`}
               </div>
             </div>
           </div>
@@ -129,7 +129,7 @@ const Investigation = () => {
             <Users className="h-8 w-8 text-accent" />
             <div>
               {
-                cat.events
+                cat?.events
             .flatMap(event => event.entities)
             .length
               }
@@ -142,7 +142,7 @@ const Investigation = () => {
             {/* Filter Panel */}
             <FilterPanel
               filter={filter}
-              entities={cat.events.flatMap(event => event.entities).map(entity => entity.name )}
+              entities={cat?.events.flatMap(event => event.entities).map(entity => entity.name) || []}
               onFilterChange={setFilter}
             />
           </div>
@@ -157,7 +157,7 @@ const Investigation = () => {
                 </h2>
                 <div className="flex items-center text-sm text-muted-foreground">
                   <Filter className="h-4 w-4 mr-1" />
-                  {filteredEventsCount} of {cat.events.length} events shown
+                  {filteredEventsCount} of {cat?.events.length} events shown
                 </div>
               </div>
               <p className="text-muted-foreground mt-1">
@@ -166,7 +166,7 @@ const Investigation = () => {
             </div>
 
             <Timeline
-              events={cat.events}
+              events={cat?.events || []}
               filter={filter}
               onFilterChange={setFilter}
             />
