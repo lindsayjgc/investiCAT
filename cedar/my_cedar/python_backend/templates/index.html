@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>InvestiCAT Summarizer</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 2rem;
+        background: #f9f9f9;
+      }
+      h1 {
+        color: #4caf50;
+      }
+      form {
+        margin-bottom: 2rem;
+      }
+      button {
+        background: #4caf50;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        cursor: pointer;
+      }
+      .box {
+        background: white;
+        padding: 1rem;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📄 InvestiCAT Document Summarizer</h1>
+    <form id="uploadForm">
+      <input type="file" name="file" accept=".pdf,.docx" required />
+      <button type="submit">Summarize</button>
+    </form>
+
+    <div class="box">
+      <h2>Summary</h2>
+      <pre id="summary">Upload a document to see results here.</pre>
+    </div>
+
+    <script>
+      const form = document.getElementById('uploadForm');
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const res = await fetch('/process', { method: 'POST', body: formData });
+        const data = await res.json();
+        document.getElementById('summary').textContent = data.summary;
+      };
+    </script>
+  </body>
+</html>
