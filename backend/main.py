@@ -54,7 +54,7 @@ def post_user(body: UserDto) -> Union[None, UserDto]:
     """
     Create a new user
     """
-    user_node = create_user(body.id, body.name, body.email)
+    user_node = create_user(body.name, body.email)
     if not user_node:
         raise HTTPException(status_code=500, detail="Failed to create user")
     return {"message": "User created", "user": user_node}
