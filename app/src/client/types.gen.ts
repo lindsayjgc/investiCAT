@@ -7,6 +7,7 @@ export type ClientOptions = {
 export type CatDto = {
     id?: string;
     title?: string;
+    description?: string;
     ownerId?: string;
     documents?: Array<DocumentDto>;
     events?: Array<EventDto>;

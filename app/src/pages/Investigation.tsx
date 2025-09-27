@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { DocumentUpload } from '@/components/DocumentUpload';
 import { Timeline } from '@/components/Timeline';
 import { FilterPanel } from '@/components/FilterPanel';
@@ -6,9 +7,12 @@ import { mockInvestigation } from '@/data/mockData';
 import { TimelineFilter } from '@/types/investigation';
 import { Button } from '@/components/ui/button';
 import { FileText, Clock, Users, Filter } from 'lucide-react';
+import { postUserByUserIdCatByCatIdDocument } from '@/client';
+import { DEFAULT_USER_ID } from '@/App';
 
 const Investigation = () => {
-  const [investigation] = useState(mockInvestigation);
+  const { id } = useParams<{ id: string }>();
+  const [investigation] = useState(mockInvestigation); // For now, still using mock data regardless of ID
   const [showUpload, setShowUpload] = useState(false);
   const [filter, setFilter] = useState<TimelineFilter>({
     entities: [],
@@ -17,9 +21,15 @@ const Investigation = () => {
     dateRange: { start: null, end: null }
   });
 
-  const handleFileProcessed = (fileId: string) => {
-    // In a real app, this would trigger re-fetching of events
-    console.log('File processed:', fileId);
+  const handleFilesChanged = (files: File[]) => {
+    Promise.all(
+      files.map(file =>
+      postUserByUserIdCatByCatIdDocument({
+        body: { file },
+        path: { userId: DEFAULT_USER_ID, catId: id }
+      })
+      )
+    );
   };
 
   const filteredEventsCount = investigation.events.filter(event => {
@@ -78,7 +88,7 @@ const Investigation = () => {
       {showUpload && (
         <div className="border-b border-border bg-card/30 backdrop-blur-sm">
           <div className="max-w-7xl mx-auto px-6 py-6">
-            <DocumentUpload onFileProcessed={handleFileProcessed} />
+            <DocumentUpload onFilesChanged={handleFilesChanged} />
           </div>
         </div>
       )}

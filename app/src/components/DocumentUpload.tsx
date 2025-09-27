@@ -1,81 +1,52 @@
 import { useState, useCallback } from 'react';
 import { Upload, File, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 
 interface UploadedFile {
   id: string;
   name: string;
   size: number;
-  progress: number;
-  status: 'uploading' | 'processing' | 'completed' | 'error';
+  status: 'pending' | 'ready';
 }
 
 interface DocumentUploadProps {
-  onFileProcessed: (fileId: string) => void;
-  onFileAdded?: (file: File) => string;
+  onFilesChanged: (files: File[]) => void;
 }
 
-export const DocumentUpload = ({ onFileProcessed, onFileAdded }: DocumentUploadProps) => {
-  const [files, setFiles] = useState<UploadedFile[]>([]);
+export const DocumentUpload = ({ onFilesChanged }: DocumentUploadProps) => {
+  const [displayFiles, setDisplayFiles] = useState<UploadedFile[]>([]);
+  const [actualFiles, setActualFiles] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
 
   const handleFiles = useCallback((fileList: FileList) => {
-    const newFiles: UploadedFile[] = Array.from(fileList).map(file => {
-      const fileId = onFileAdded ? onFileAdded(file) : crypto.randomUUID();
-      return {
-        id: fileId,
-        name: file.name,
-        size: file.size,
-        progress: 0,
-        status: 'uploading'
-      };
+    const newFileArray = Array.from(fileList);
+    const newDisplayFiles: UploadedFile[] = newFileArray.map(file => ({
+      id: crypto.randomUUID(),
+      name: file.name,
+      size: file.size,
+      status: 'ready' as const
+    }));
+    
+    setDisplayFiles(prev => [...prev, ...newDisplayFiles]);
+    setActualFiles(prev => {
+      const updatedFiles = [...prev, ...newFileArray];
+      onFilesChanged(updatedFiles);
+      return updatedFiles;
     });
-
-    setFiles(prev => [...prev, ...newFiles]);
-
-    // Simulate file upload and processing
-    newFiles.forEach(file => {
-      simulateUpload(file.id);
-    });
-  }, [onFileAdded]);
-
-  const simulateUpload = (fileId: string) => {
-    const updateProgress = (progress: number, status?: UploadedFile['status']) => {
-      setFiles(prev => prev.map(file => 
-        file.id === fileId 
-          ? { ...file, progress, ...(status && { status }) }
-          : file
-      ));
-    };
-
-    // Simulate upload progress
-    let progress = 0;
-    const uploadInterval = setInterval(() => {
-      progress += Math.random() * 30;
-      if (progress >= 100) {
-        clearInterval(uploadInterval);
-        updateProgress(100, 'processing');
-        
-        // Simulate processing
-        setTimeout(() => {
-          updateProgress(100, 'completed');
-          onFileProcessed(fileId);
-          toast({
-            title: "Document processed",
-            description: "Events have been extracted and added to the timeline.",
-          });
-        }, 2000);
-      } else {
-        updateProgress(progress);
-      }
-    }, 200);
-  };
+  }, [onFilesChanged]);
 
   const removeFile = (fileId: string) => {
-    setFiles(prev => prev.filter(file => file.id !== fileId));
+    const fileIndex = displayFiles.findIndex(f => f.id === fileId);
+    if (fileIndex !== -1) {
+      setDisplayFiles(prev => prev.filter(file => file.id !== fileId));
+      setActualFiles(prev => {
+        const updatedFiles = prev.filter((_, index) => index !== fileIndex);
+        onFilesChanged(updatedFiles);
+        return updatedFiles;
+      });
+    }
   };
 
   const formatFileSize = (bytes: number) => {
@@ -153,10 +124,10 @@ export const DocumentUpload = ({ onFileProcessed, onFileAdded }: DocumentUploadP
         />
       </div>
 
-      {files.length > 0 && (
+      {displayFiles.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-muted-foreground">Uploaded Files</h4>
-          {files.map((file) => (
+          <h4 className="text-sm font-medium text-muted-foreground">Selected Files</h4>
+          {displayFiles.map((file) => (
             <div key={file.id} className="bg-card p-4 rounded-lg border shadow-card">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
@@ -169,32 +140,21 @@ export const DocumentUpload = ({ onFileProcessed, onFileAdded }: DocumentUploadP
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  {file.status === 'completed' && (
+                  {file.status === 'ready' && (
                     <Check className="h-5 w-5 text-green-500" />
                   )}
-                  {file.status !== 'completed' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(file.id)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(file.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span className="capitalize text-muted-foreground">
-                    {file.status === 'uploading' && 'Uploading...'}
-                    {file.status === 'processing' && 'Processing...'}
-                    {file.status === 'completed' && 'Completed'}
-                    {file.status === 'error' && 'Error'}
-                  </span>
-                  <span className="text-muted-foreground">{Math.round(file.progress)}%</span>
-                </div>
-                <Progress value={file.progress} className="h-2" />
+              <div className="text-xs text-muted-foreground">
+                Ready to upload
               </div>
             </div>
           ))}
