@@ -1,0 +1,607 @@
+openapi: 3.0.3
+info:
+  title: Cat API
+  version: 2.1.0
+  description: API for managing cats (timeline), their documents, events, and related entities.
+
+tags:
+  - name: Cat
+    description: Operations related to cats (timeline)
+  - name: User
+    description: Operations related to users
+  - name: Document
+    description: Operations related to cat documents
+  - name: Event
+    description: Operations related to events
+  - name: Entity
+    description: Operations related to entities participating in events
+  - name: Location
+    description: Operations related to locations
+
+paths:
+  # ------------------------
+  # User Endpoints
+  # ------------------------
+  /user:
+    post:
+      tags: [User]
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+    get:
+      tags: [User]
+      summary: Get all users
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+
+  /user/{userId}:
+    get:
+        tags: [User]
+        summary: Get a specific user
+        parameters:
+          - name: userId
+            in: path
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: User found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UserDto'
+          '404':
+            description: User not found
+    delete:
+      tags: [User]
+      summary: Delete a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: User deleted
+
+  # ------------------------
+  # Cat Endpoints
+  # ------------------------
+  /user/{userId}/cat:
+    post:
+      tags: [Cat]
+      summary: Create a new cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatDto'
+      responses:
+        '201':
+          description: Cat created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatDto'
+    get:
+      tags: [Cat]
+      summary: Get all cats (timelines)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of cats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatDto'
+
+  /user/{userId}/cat/{catId}:
+    get:
+      tags: [Cat]
+      summary: Get a specific cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cat found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatDto'
+        '404':
+          description: Cat not found
+    put:
+      tags: [Cat]
+      summary: Update a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatDto'
+      responses:
+        '200':
+          description: Cat updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatDto'
+    delete:
+      tags: [Cat]
+      summary: Delete a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Cat deleted
+
+  # ------------------------
+  # Document Endpoints
+  # ------------------------
+  /user/{userId}/cat/{catId}/document:
+    post:
+      tags: [Document]
+      summary: Upload a document for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+    get:
+      tags: [Document]
+      summary: Get all documents for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentDto'
+                  
+  /user/{userId}/cat/{catId}/document/{documentId}:
+    get:
+      tags: [Document]
+      summary: Get a specific document
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+        '404':
+          description: Document not found
+
+  # ------------------------
+  # Event Endpoints
+  # ------------------------
+  /user/{userId}/cat/{catId}/event:
+    get:
+      tags: [Event]
+      summary: Get all events for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EventDto'
+    post:
+      tags: [Event]
+      summary: Associate an existing event with a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                eventId:
+                  type: string
+      responses:
+        '200':
+          description: Event associated with cat
+    delete:
+      tags: [Event]
+      summary: Delete a cat's event
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Event deleted
+
+  # ------------------------
+  # Entity Endpoints
+  # ------------------------
+  /user/{userId}/cat/{catId}/entity:
+    post:
+      tags: [Entity]
+      summary: Create an entity (person/animal) who participates in events
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityDto'
+      responses:
+        '201':
+          description: Entity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityDto'
+    get:
+      tags: [Entity]
+      summary: Get all entities for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityDto'
+    delete:
+      tags: [Entity]
+      summary: Delete a cat's entity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Entity deleted
+            
+  /user/{userId}/cat/{catId}/entity/{entityId}:
+    get:
+      tags: [Entity]
+      summary: Get a specific entity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entity found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityDto'
+        '404':
+          description: Entity not found
+  
+  /user/{userId}/cat/{catId}/event/{eventId}/entity:
+    post:
+      tags: [Entity]
+      summary: Add an entity to an event (PARTICIPATES_IN)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityId:
+                  type: string
+      responses:
+        '200':
+          description: Entity linked to event
+            
+  # ------------------------
+  # Location Endpoints
+  # ------------------------
+  /user/{userId}/cat/{catId}/location:
+    get:
+      tags: [Location]
+      summary: Get all locations for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationDto'
+
+components:
+  schemas:
+    CatDto:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        ownerId:
+          type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentDto'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventDto'
+
+    DocumentDto:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+
+    EventDto:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
+          type: string
+        date:
+          type: string
+          format: date-time
+        location:
+          $ref: '#/components/schemas/LocationDto'
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityDto'
+
+    LocationDto:
+      type: object
+      properties:
+        id:
+          type: string
+        address:
+          type: string
+
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    EntityDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
