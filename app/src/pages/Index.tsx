@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { FileText, Search, Clock, Users, ArrowRight, Plus } from 'lucide-react';
+import { FileText, Search, Clock, Users, ArrowRight, Plus, MessageSquare } from 'lucide-react';
 
 const Index = () => {
   const [isHovered, setIsHovered] = useState(false);
@@ -23,9 +23,9 @@ const Index = () => {
       description: 'Filter events by entities, categories, dates, and priority levels.'
     },
     {
-      icon: Users,
-      title: 'Entity Tracking',
-      description: 'Track people, organizations, locations, and objects across all events.'
+      icon: MessageSquare,
+      title: 'Chat with your Data',
+      description: 'Interact with your investigation data using natural language queries.'
     }
   ];
 
@@ -36,7 +36,7 @@ const Index = () => {
         <div className="absolute inset-0 bg-gradient-primary opacity-10"></div>
         <div className="relative max-w-6xl mx-auto px-6 py-20">
           <div className="text-center">
-            <h1 className="text-5xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent p-2">
               Investigation Timeline Builder
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
@@ -48,7 +48,7 @@ const Index = () => {
               onClick={() => window.location.href = '/investigation'}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              className="bg-gradient-primary text-lg px-8 py-3 hover:scale-105 transition-all duration-300 shadow-glow"
+              className="bg-primary text-lg px-8 py-3 hover:scale-105 transition-all duration-300 shadow-glow"
             >
               <Plus className={`h-5 w-5 mr-2 transition-transform ${isHovered ? 'rotate-90' : ''}`} />
               Start New Investigation
@@ -71,7 +71,7 @@ const Index = () => {
           {features.map((feature, index) => (
             <Card
               key={index}
-              className="p-6 bg-gradient-card border-border shadow-card hover:shadow-glow transition-all duration-300 hover:scale-105 group"
+              className="p-6 bg-gradient-card border-border shadow-card group"
             >
               <feature.icon className="h-10 w-10 text-primary mb-4 group-hover:text-accent transition-colors" />
               <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>

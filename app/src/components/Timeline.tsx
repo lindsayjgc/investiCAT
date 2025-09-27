@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { MapPin, Users, Calendar, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { MapPin, Users, Calendar, AlertTriangle, ChevronDown, ChevronUp, Link } from 'lucide-react';
 import { Event, TimelineFilter } from '@/types/investigation';
 import { EventDetail } from './EventDetail';
 import { Button } from '@/components/ui/button';
@@ -119,18 +119,20 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                   
                   {/* Timeline Dot */}
                   <div 
-                    className={`relative z-10 w-6 h-6 rounded-full border-4 border-background cursor-pointer transition-all duration-300 hover:scale-110 ${
+                    className={`relative z-10 w-6 h-6 rounded-sm border-4 border-gray cursor-pointer transition-all duration-300 hover:scale-110 ${
                       isExpanded ? 'bg-primary shadow-glow' : `bg-event-${getEventColor(event.category).replace('event-', '')}`
-                    } ${hasRelationships ? 'animate-pulse-glow' : 'shadow-event'}`}
+                    }`}
                     onClick={() => toggleEventExpansion(event.id)}
                   >
                     {getPriorityIcon(event.priority) && (
-                      <div className="absolute -top-1 -right-1">
+                      <div className="absolute -bottom-2 -right-2 w-4 h-4 p-0.5 bg-gray-100 rounded-full">
                         <AlertTriangle className="h-3 w-3 text-event-danger" />
                       </div>
                     )}
                     {hasRelationships && (
-                      <div className="absolute -top-2 -right-2 w-3 h-3 bg-relationship-highlight rounded-full border border-background animate-pulse" />
+                      <div className="absolute -top-2 -right-2 w-4 h-4 p-0.5 bg-gray-300 rounded-full">
+                        <Link className="relative h-3 w-3" />
+                      </div>
                     )}
                   </div>
 
@@ -140,7 +142,7 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="mt-4 text-xs text-muted-foreground hover:text-foreground"
+                        className="mt-4 text-xs text-muted-foreground hover:dark-gray"
                       >
                         {isExpanded ? (
                           <>Less <ChevronUp className="h-3 w-3 ml-1" /></>

@@ -65,7 +65,7 @@ const Investigation = () => {
             </div>
             <Button
               onClick={() => setShowUpload(!showUpload)}
-              className="bg-gradient-primary hover:scale-105 transition-transform"
+              className="bg-primary transition-transform"
             >
               <FileText className="h-4 w-4 mr-2" />
               Add Documents
