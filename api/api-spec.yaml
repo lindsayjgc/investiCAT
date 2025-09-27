@@ -52,10 +52,28 @@ paths:
                 items:
                   $ref: '#/components/schemas/UserDto'
 
-  /user/{userId}/cats:
+  /user/{userId}:
     get:
+        tags: [User]
+        summary: Get a specific user
+        parameters:
+          - name: userId
+            in: path
+            required: true
+            schema:
+              type: string
+        responses:
+          '200':
+            description: User found
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/UserDto'
+          '404':
+            description: User not found
+    delete:
       tags: [User]
-      summary: Get all cats (timelines) owned by a user
+      summary: Delete a user
       parameters:
         - name: userId
           in: path
@@ -63,22 +81,22 @@ paths:
           schema:
             type: string
       responses:
-        '200':
-          description: List of cats
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/CatDto'
+        '204':
+          description: User deleted
 
   # ------------------------
   # Cat Endpoints
   # ------------------------
-  /cat:
+  /user/{userId}/cat:
     post:
       tags: [Cat]
       summary: Create a new cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -95,9 +113,15 @@ paths:
     get:
       tags: [Cat]
       summary: Get all cats (timelines)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
-          description: List of all cats
+          description: List of cats
           content:
             application/json:
               schema:
@@ -105,11 +129,16 @@ paths:
                 items:
                   $ref: '#/components/schemas/CatDto'
 
-  /cat/{catId}:
+  /user/{userId}/cat/{catId}:
     get:
       tags: [Cat]
       summary: Get a specific cat (timeline)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
@@ -128,6 +157,11 @@ paths:
       tags: [Cat]
       summary: Update a cat (timeline)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
@@ -150,6 +184,11 @@ paths:
       tags: [Cat]
       summary: Delete a cat (timeline)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
@@ -162,11 +201,16 @@ paths:
   # ------------------------
   # Document Endpoints
   # ------------------------
-  /cat/{catId}/document:
+  /user/{userId}/cat/{catId}/document:
     post:
       tags: [Document]
-      summary: Upload a PDF document for a cat (timeline)
+      summary: Upload a document for a cat (timeline)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
@@ -193,6 +237,11 @@ paths:
       tags: [Document]
       summary: Get all documents for a cat (timeline)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
@@ -207,45 +256,73 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/DocumentDto'
-    delete:
+                  
+  /user/{userId}/cat/{catId}/document/{documentId}:
+    get:
       tags: [Document]
-      summary: Delete a cat's document
+      summary: Get a specific document
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
           schema:
             type: string
         - name: documentId
-          in: query
+          in: path
           required: true
           schema:
             type: string
       responses:
-        '204':
-          description: Document deleted
+        '200':
+          description: Document found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+        '404':
+          description: Document not found
 
   # ------------------------
   # Event Endpoints
   # ------------------------
+  /user/{userId}/cat/{catId}/event:
     get:
       tags: [Event]
-      summary: Get all events
+      summary: Get all events for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
       responses:
         '200':
-          description: List of all events
+          description: List of events
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/EventDto'
-
-  /cat/{catId}/event:
     post:
       tags: [Event]
       summary: Associate an existing event with a cat (timeline)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: catId
           in: path
           required: true
@@ -263,19 +340,47 @@ paths:
       responses:
         '200':
           description: Event associated with cat
-
-  /document/{documentId}/event/{eventId}:
-    post:
-      tags: [Document]
-      summary: Link a document to an event (MENTIONS)
+    delete:
+      tags: [Event]
+      summary: Delete a cat's event
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: eventId
+          in: query
+          required: true
+          schema:
+            type: string
       responses:
-        '200':
-          description: Document linked to event
+        '204':
+          description: Event deleted
 
-  /entity:
+  # ------------------------
+  # Entity Endpoints
+  # ------------------------
+  /user/{userId}/cat/{catId}/entity:
     post:
       tags: [Entity]
       summary: Create an entity (person/animal) who participates in events
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -289,12 +394,97 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/EntityDto'
-
-  /event/{eventId}/entity:
+    get:
+      tags: [Entity]
+      summary: Get all entities for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of entities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EntityDto'
+    delete:
+      tags: [Entity]
+      summary: Delete a cat's entity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Entity deleted
+            
+  /user/{userId}/cat/{catId}/entity/{entityId}:
+    get:
+      tags: [Entity]
+      summary: Get a specific entity
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entityId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entity found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityDto'
+        '404':
+          description: Entity not found
+  
+  /user/{userId}/cat/{catId}/event/{eventId}/entity:
     post:
       tags: [Entity]
       summary: Add an entity to an event (PARTICIPATES_IN)
       parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
         - name: eventId
           in: path
           required: true
@@ -312,12 +502,37 @@ paths:
       responses:
         '200':
           description: Entity linked to event
+            
+  # ------------------------
+  # Location Endpoints
+  # ------------------------
+  /user/{userId}/cat/{catId}/location:
+    get:
+      tags: [Location]
+      summary: Get all locations for a cat (timeline)
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of locations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationDto'
 
 components:
   schemas:
-    # ------------------------
-    # Cat DTO
-    # ------------------------
     CatDto:
       type: object
       properties:
@@ -336,9 +551,6 @@ components:
           items:
             $ref: '#/components/schemas/EventDto'
 
-    # ------------------------
-    # Document DTO
-    # ------------------------
     DocumentDto:
       type: object
       properties:
@@ -346,13 +558,7 @@ components:
           type: string
         filename:
           type: string
-        uploadedAt:
-          type: string
-          format: date-time
 
-    # ------------------------
-    # Event DTO
-    # ------------------------
     EventDto:
       type: object
       properties:
@@ -372,9 +578,6 @@ components:
           items:
             $ref: '#/components/schemas/EntityDto'
 
-    # ------------------------
-    # Location DTO
-    # ------------------------
     LocationDto:
       type: object
       properties:
@@ -383,9 +586,6 @@ components:
         address:
           type: string
 
-    # ------------------------
-    # User DTO
-    # ------------------------
     UserDto:
       type: object
       properties:
@@ -398,9 +598,6 @@ components:
         password:
           type: string
 
-    # ------------------------
-    # Entity DTO
-    # ------------------------
     EntityDto:
       type: object
       properties:
