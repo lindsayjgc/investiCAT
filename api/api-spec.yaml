@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: Cat API
+  version: 1.0.0
+  description: API for managing cats, their documents, and timelines.
+
+tags:
+  - name: Cat
+    description: Operations related to cats
+  - name: Document
+    description: Operations related to cat documents
+  - name: Timeline
+    description: Operations related to timelines
+
+paths:
+  # ------------------------
+  # Cat Endpoints
+  # ------------------------
+  /cat:
+    post:
+      tags: [Cat]
+      summary: Create a new cat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatDto'
+      responses:
+        '201':
+          description: Cat created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatDto'
+    get:
+      tags: [Cat]
+      summary: Get all cats
+      responses:
+        '200':
+          description: List of all cats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatDto'
+
+  /cat/{catId}:
+    get:
+      tags: [Cat]
+      summary: Get a specific cat
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cat found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatDto'
+        '404':
+          description: Cat not found
+    put:
+      tags: [Cat]
+      summary: Update a cat
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatDto'
+      responses:
+        '200':
+          description: Cat updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatDto'
+    delete:
+      tags: [Cat]
+      summary: Delete a cat
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Cat deleted
+
+  # ------------------------
+  # Document Endpoints
+  # ------------------------
+  /cat/{catId}/document:
+    post:
+      tags: [Document]
+      summary: Upload a PDF document for a cat
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDto'
+    delete:
+      tags: [Document]
+      summary: Delete a cat's document
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: documentId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Document deleted
+
+  # ------------------------
+  # Timeline Endpoints
+  # ------------------------
+  /cat/timeline:
+    get:
+      tags: [Timeline]
+      summary: Get timeline of cat events
+      responses:
+        '200':
+          description: Timeline entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TimeLineEntryDto'
+
+components:
+  schemas:
+    # ------------------------
+    # Cat DTO
+    # ------------------------
+    CatDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+
+    # ------------------------
+    # Document DTO
+    # ------------------------
+    DocumentDto:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+
+    # ------------------------
+    # Timeline DTO
+    # ------------------------
+    TimeLineEntryDto:
+      type: object
+      properties:
+        eventTitle:
+          type: string
+        date:
+          type: string
+          format: date-time
+        location:
+          type: string
+        description:
+          type: string
