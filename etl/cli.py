@@ -56,12 +56,12 @@ Examples:
     # Validate input file
     file_path = Path(args.file)
     if not file_path.exists():
-        print(f"❌ File not found: {args.file}", file=sys.stderr)
+        print(f"File not found: {args.file}", file=sys.stderr)
         return 1
     
     if file_path.suffix.lower() not in ['.pdf', '.docx']:
-        print(f"❌ Unsupported file type: {file_path.suffix}", file=sys.stderr)
-        print("💡 Only PDF and DOCX files are supported", file=sys.stderr)
+        print(f"Unsupported file type: {file_path.suffix}", file=sys.stderr)
+        print("Only PDF and DOCX files are supported", file=sys.stderr)
         return 1
     
     try:
@@ -84,27 +84,27 @@ Examples:
             with open(args.output, 'w') as f:
                 json.dump(result, f, indent=2)
             if not args.quiet:
-                print(f"\n💾 Results saved to: {args.output}")
+                print(f"\n Results saved to: {args.output}")
         else:
             print(json.dumps(result, indent=2))
         
         # Print summary unless quiet
         if not args.quiet and args.output:
             nodes = result["nodes"]
-            print(f"\n📊 Processing Summary:")
-            print(f"   📁 Investigation: {args.title}")
-            print(f"   📄 Document: {file_path.name}")
-            print(f"   🎯 Events extracted: {len(nodes['events'])}")
-            print(f"   👥 Entities found: {len(nodes['entities'])}")
-            print(f"   📅 Dates identified: {len(nodes['dates'])}")
-            print(f"   📍 Locations found: {len(nodes['locations'])}")
-            print(f"   � Users created: {len(nodes['users'])}")
-            print(f"   �🔗 Total relationships: {len(result['relationships'])}")
-        
+            print(f"\n Processing Summary:")
+            print(f"   Investigation: {args.title}")
+            print(f"   Document: {file_path.name}")
+            print(f"   Events extracted: {len(nodes['events'])}")
+            print(f"   Entities found: {len(nodes['entities'])}")
+            print(f"   Dates identified: {len(nodes['dates'])}")
+            print(f"   Locations found: {len(nodes['locations'])}")
+            print(f"   Users created: {len(nodes['users'])}")
+            print(f"   Total relationships: {len(result['relationships'])}")
+
         return 0
         
     except Exception as e:
-        print(f"❌ Processing failed: {e}", file=sys.stderr)
+        print(f"Processing failed: {e}", file=sys.stderr)
         if not args.quiet:
             import traceback
             traceback.print_exc()
