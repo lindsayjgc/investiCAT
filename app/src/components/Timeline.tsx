@@ -104,11 +104,11 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                   className="relative flex flex-col items-center animate-fade-in"
                   style={{ 
                     animationDelay: `${index * 0.1}s`,
-                    minWidth: isExpanded ? '400px' : '200px'
+                    minWidth: '400px'
                   }}
                 >
                   {/* Event Label (above timeline) */}
-                  <div className="mb-4 text-center max-w-[180px]">
+                  <div className="mb-4 text-center max-w-sm">
                     <div className="text-xs text-muted-foreground mb-1">
                       {format(event.date, 'MMM dd')}
                     </div>
@@ -137,20 +137,22 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                   </div>
 
                   {/* Expandable Event Card (below timeline) */}
-                  <Collapsible open={isExpanded} onOpenChange={() => toggleEventExpansion(event.id)}>
-                    <CollapsibleTrigger asChild>
+                    <Collapsible open={isExpanded} onOpenChange={() => toggleEventExpansion(event.id)}>
+                    <div className="flex justify-center mt-4">
+                      <CollapsibleTrigger asChild>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="mt-4 text-xs text-muted-foreground hover:dark-gray"
+                        className="text-xs text-muted-foreground hover:dark-gray"
                       >
                         {isExpanded ? (
-                          <>Less <ChevronUp className="h-3 w-3 ml-1" /></>
+                        <>Less <ChevronUp className="h-3 w-3 ml-1" /></>
                         ) : (
-                          <>More <ChevronDown className="h-3 w-3 ml-1" /></>
+                        <>More <ChevronDown className="h-3 w-3 ml-1" /></>
                         )}
                       </Button>
-                    </CollapsibleTrigger>
+                      </CollapsibleTrigger>
+                    </div>
                     
                     <CollapsibleContent className="mt-4">
                       <div className="bg-gradient-card border border-border rounded-lg p-4 shadow-card max-w-sm">
