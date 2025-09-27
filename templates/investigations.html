@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investigations - InvestiCAT</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: transform 0.2s ease-in-out;
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-white">InvestiCAT</h1>
+                    <span class="ml-2 text-purple-200 text-sm">Investigation Timeline Builder</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/" class="text-white hover:text-purple-200 px-3 py-2 rounded-md text-sm font-medium">Home</a>
+                    <a href="/upload" class="text-white hover:text-purple-200 px-3 py-2 rounded-md text-sm font-medium">Upload</a>
+                    <a href="/investigations" class="text-purple-200 px-3 py-2 rounded-md text-sm font-medium">Investigations</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Investigations List -->
+    <div class="min-h-screen py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="mb-8">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-900">Your Investigations</h2>
+                        <p class="text-gray-600 mt-2">Manage and review your investigation timeline analyses</p>
+                    </div>
+                    <a href="/upload" class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors shadow-lg">
+                        📄 New Investigation
+                    </a>
+                </div>
+            </div>
+
+            {% if investigations %}
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {% for investigation in investigations %}
+                        <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                                        {{ investigation.title }}
+                                    </h3>
+                                    <p class="text-sm text-gray-600 mb-2">
+                                        📄 {{ investigation.filename }}
+                                    </p>
+                                </div>
+                                
+                                {% if investigation.status == 'completed' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        ✅ Completed
+                                    </span>
+                                {% elif investigation.status == 'error' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        ❌ Error
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        🔄 Processing
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="space-y-2 mb-4">
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    {{ investigation.uploaded_at }}
+                                </div>
+                                <div class="flex items-center text-sm text-gray-500">
+                                    <svg class="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    {{ investigation.processing_method }}
+                                </div>
+                            </div>
+
+                            <div class="flex space-x-2">
+                                <a href="/results/{{ investigation.id }}" 
+                                   class="flex-1 bg-purple-600 text-white text-center py-2 px-4 rounded-md text-sm hover:bg-purple-700 transition-colors">
+                                    View Results
+                                </a>
+                                <button onclick="copyInvestigationId('{{ investigation.id }}')" 
+                                        class="bg-gray-200 text-gray-700 px-3 py-2 rounded-md text-sm hover:bg-gray-300 transition-colors">
+                                    📋
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Pagination placeholder -->
+                <div class="mt-8 text-center">
+                    <p class="text-sm text-gray-500">
+                        Showing {{ investigations|length }} investigation{{ 's' if investigations|length != 1 else '' }}
+                    </p>
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-16">
+                    <div class="mx-auto h-24 w-24 text-gray-400 mb-6">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="h-full w-full">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-2">No Investigations Yet</h3>
+                    <p class="text-gray-600 mb-6">Upload your first document to start building investigation timelines</p>
+                    <a href="/upload" class="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors shadow-lg">
+                        🔍 Start Your First Investigation
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Success Toast (hidden by default) -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-full transition-transform duration-300">
+        <div class="flex items-center">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            Investigation ID copied to clipboard!
+        </div>
+    </div>
+
+    <script>
+        function copyInvestigationId(id) {
+            navigator.clipboard.writeText(id).then(function() {
+                showToast();
+            }, function(err) {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-full');
+            setTimeout(() => {
+                toast.classList.add('translate-y-full');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
