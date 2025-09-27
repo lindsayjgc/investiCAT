@@ -8,7 +8,7 @@ from reportlab.lib.pagesizes import letter
 
 def create_test_pdf():
     """Create a test PDF with investigative content."""
-    pdf_path = "/Users/maskeenkaur/investiCAT/etl/test_investigation.pdf"
+    pdf_path = "C:/Users/sheli/OneDrive/Desktop/test_investigation.pdf"
     
     c = canvas.Canvas(pdf_path, pagesize=letter)
     width, height = letter
