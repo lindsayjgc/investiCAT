@@ -1,25 +1,84 @@
 openapi: 3.0.3
 info:
   title: Cat API
-  version: 1.0.0
-  description: API for managing cats, their documents, and timelines.
+  version: 2.1.0
+  description: API for managing cats (timeline), their documents, events, and related entities.
 
 tags:
   - name: Cat
-    description: Operations related to cats
+    description: Operations related to cats (timeline)
+  - name: User
+    description: Operations related to users
   - name: Document
     description: Operations related to cat documents
-  - name: Timeline
-    description: Operations related to timelines
+  - name: Event
+    description: Operations related to events
+  - name: Entity
+    description: Operations related to entities participating in events
+  - name: Location
+    description: Operations related to locations
 
 paths:
+  # ------------------------
+  # User Endpoints
+  # ------------------------
+  /user:
+    post:
+      tags: [User]
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserDto'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDto'
+    get:
+      tags: [User]
+      summary: Get all users
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserDto'
+
+  /user/{userId}/cats:
+    get:
+      tags: [User]
+      summary: Get all cats (timelines) owned by a user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of cats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CatDto'
+
   # ------------------------
   # Cat Endpoints
   # ------------------------
   /cat:
     post:
       tags: [Cat]
-      summary: Create a new cat
+      summary: Create a new cat (timeline)
       requestBody:
         required: true
         content:
@@ -35,7 +94,7 @@ paths:
                 $ref: '#/components/schemas/CatDto'
     get:
       tags: [Cat]
-      summary: Get all cats
+      summary: Get all cats (timelines)
       responses:
         '200':
           description: List of all cats
@@ -49,7 +108,7 @@ paths:
   /cat/{catId}:
     get:
       tags: [Cat]
-      summary: Get a specific cat
+      summary: Get a specific cat (timeline)
       parameters:
         - name: catId
           in: path
@@ -67,7 +126,7 @@ paths:
           description: Cat not found
     put:
       tags: [Cat]
-      summary: Update a cat
+      summary: Update a cat (timeline)
       parameters:
         - name: catId
           in: path
@@ -89,7 +148,7 @@ paths:
                 $ref: '#/components/schemas/CatDto'
     delete:
       tags: [Cat]
-      summary: Delete a cat
+      summary: Delete a cat (timeline)
       parameters:
         - name: catId
           in: path
@@ -106,7 +165,7 @@ paths:
   /cat/{catId}/document:
     post:
       tags: [Document]
-      summary: Upload a PDF document for a cat
+      summary: Upload a PDF document for a cat (timeline)
       parameters:
         - name: catId
           in: path
@@ -130,6 +189,24 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/DocumentDto'
+    get:
+      tags: [Document]
+      summary: Get all documents for a cat (timeline)
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentDto'
     delete:
       tags: [Document]
       summary: Delete a cat's document
@@ -149,21 +226,109 @@ paths:
           description: Document deleted
 
   # ------------------------
-  # Timeline Endpoints
+  # Event Endpoints
   # ------------------------
-  /cat/timeline:
+  /event:
+    post:
+      tags: [Event]
+      summary: Create a new event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventDto'
+      responses:
+        '201':
+          description: Event created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventDto'
     get:
-      tags: [Timeline]
-      summary: Get timeline of cat events
+      tags: [Event]
+      summary: Get all events
       responses:
         '200':
-          description: Timeline entries
+          description: List of all events
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/TimeLineEntryDto'
+                  $ref: '#/components/schemas/EventDto'
+
+  /cat/{catId}/event:
+    post:
+      tags: [Event]
+      summary: Associate an existing event with a cat (timeline)
+      parameters:
+        - name: catId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                eventId:
+                  type: string
+      responses:
+        '200':
+          description: Event associated with cat
+
+  /document/{documentId}/event/{eventId}:
+    post:
+      tags: [Document]
+      summary: Link a document to an event (MENTIONS)
+      responses:
+        '200':
+          description: Document linked to event
+
+  /entity:
+    post:
+      tags: [Entity]
+      summary: Create an entity (person/animal) who participates in events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntityDto'
+      responses:
+        '201':
+          description: Entity created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntityDto'
+
+  /event/{eventId}/entity:
+    post:
+      tags: [Entity]
+      summary: Add an entity to an event (PARTICIPATES_IN)
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                entityId:
+                  type: string
+      responses:
+        '200':
+          description: Entity linked to event
 
 components:
   schemas:
@@ -175,8 +340,18 @@ components:
       properties:
         id:
           type: string
-        name:
+        title:
           type: string
+        ownerId:
+          type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentDto'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventDto'
 
     # ------------------------
     # Document DTO
@@ -193,17 +368,60 @@ components:
           format: date-time
 
     # ------------------------
-    # Timeline DTO
+    # Event DTO
     # ------------------------
-    TimeLineEntryDto:
+    EventDto:
       type: object
       properties:
-        eventTitle:
+        id:
+          type: string
+        title:
+          type: string
+        summary:
           type: string
         date:
           type: string
           format: date-time
         location:
+          $ref: '#/components/schemas/LocationDto'
+        entities:
+          type: array
+          items:
+            $ref: '#/components/schemas/EntityDto'
+
+    # ------------------------
+    # Location DTO
+    # ------------------------
+    LocationDto:
+      type: object
+      properties:
+        id:
           type: string
-        description:
+        address:
+          type: string
+
+    # ------------------------
+    # User DTO
+    # ------------------------
+    UserDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+
+    # ------------------------
+    # Entity DTO
+    # ------------------------
+    EntityDto:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
           type: string
