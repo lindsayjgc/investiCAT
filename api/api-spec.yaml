@@ -228,23 +228,6 @@ paths:
   # ------------------------
   # Event Endpoints
   # ------------------------
-  /event:
-    post:
-      tags: [Event]
-      summary: Create a new event
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EventDto'
-      responses:
-        '201':
-          description: Event created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EventDto'
     get:
       tags: [Event]
       summary: Get all events
