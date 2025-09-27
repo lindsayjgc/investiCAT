@@ -8,6 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "api:gen": "openapi-ts -i ./../api/api-spec.yaml -o src/client",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -64,6 +65,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@hey-api/openapi-ts": "0.84.3",
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",

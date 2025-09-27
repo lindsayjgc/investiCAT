@@ -4,6 +4,10 @@ info:
   version: 2.1.0
   description: API for managing cats (timeline), their documents, events, and related entities.
 
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
 tags:
   - name: Cat
     description: Operations related to cats (timeline)
