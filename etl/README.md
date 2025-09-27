@@ -253,7 +253,6 @@ The processor includes comprehensive error handling:
 etl/
 ├── document_processor_neo4j.py  # Main processor class
 ├── cli.py                       # Command-line interface
-├── create_test_pdf.py          # Test document creator
 ├── requirements.txt            # Dependencies
 └── README.md                   # This file
 ```
