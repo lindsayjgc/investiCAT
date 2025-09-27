@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Filter, X, Calendar, Users, Tag, AlertCircle } from 'lucide-react';
-import { TimelineFilter, Entity } from '@/types/investigation';
+import { TimelineFilter } from '@/types/investigation';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 
 interface FilterPanelProps {
   filter: TimelineFilter;
-  entities: Entity[];
+  entities: string[];
   onFilterChange: (filter: TimelineFilter) => void;
   className?: string;
 }
@@ -214,35 +214,31 @@ export const FilterPanel = ({ filter, entities, onFilterChange, className = '' }
               </Label>
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {entities.map(entity => (
-                  <div key={entity.id} className="flex items-center space-x-2">
+                  <div key={entity} className="flex items-center space-x-2">
                     <Checkbox
-                      id={`entity-${entity.id}`}
-                      checked={filter.entities.includes(entity.id)}
+                      id={`entity-${entity}`}
+                      checked={filter.entities.includes(entity)}
                       onCheckedChange={(checked) => {
                         if (checked) {
                           updateFilter({
-                            entities: [...filter.entities, entity.id]
+                            entities: [...filter.entities, entity]
                           });
                         } else {
                           updateFilter({
-                            entities: filter.entities.filter(e => e !== entity.id)
+                            entities: filter.entities.filter(e => e !== entity)
                           });
                         }
                       }}
                     />
                     <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: entity.color }}
+                      className="w-3 h-3 rounded-full bg-green-700"
                     />
                     <Label 
-                      htmlFor={`entity-${entity.id}`}
+                      htmlFor={`entity-${entity}`}
                       className="text-sm cursor-pointer flex-1"
                     >
-                      {entity.name}
+                      {entity}
                     </Label>
-                    <span className="text-xs text-muted-foreground capitalize">
-                      {entity.type}
-                    </span>
                   </div>
                 ))}
               </div>

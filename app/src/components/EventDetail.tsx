@@ -3,10 +3,11 @@ import { X, MapPin, Users, Calendar, FileText, Network } from 'lucide-react';
 import { Event } from '@/types/investigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EventDto } from '@/client';
 
 interface EventDetailProps {
-  event: Event;
-  relatedEvents: Event[];
+  event: EventDto;
+  relatedEvents: EventDto[];
   onClose: () => void;
 }
 
@@ -30,20 +31,20 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
           <div className="flex-1">
             <div className="flex items-center space-x-3 mb-2">
               <h2 className="text-xl font-semibold">{event.title}</h2>
-              <Badge 
+              {/* <Badge 
                 variant="outline" 
                 className={`bg-${getEventColor(event.category)}/20 text-${getEventColor(event.category)} border-${getEventColor(event.category)}/30`}
               >
                 {event.category}
-              </Badge>
-              <Badge variant="outline" className={`
+              </Badge> */}
+              {/* <Badge variant="outline" className={`
                 ${event.priority === 'critical' ? 'bg-event-danger/20 text-event-danger border-event-danger/30' : ''}
                 ${event.priority === 'high' ? 'bg-event-warning/20 text-event-warning border-event-warning/30' : ''}
                 ${event.priority === 'medium' ? 'bg-event-secondary/20 text-event-secondary border-event-secondary/30' : ''}
                 ${event.priority === 'low' ? 'bg-muted/20 text-muted-foreground border-muted/30' : ''}
               `}>
                 {event.priority} priority
-              </Badge>
+              </Badge> */}
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose}>
@@ -56,7 +57,7 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
           {/* Description */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
-            <p className="text-sm leading-relaxed">{event.description}</p>
+            <p className="text-sm leading-relaxed">{event.summary}</p>
           </div>
 
           {/* Event Details */}
@@ -72,11 +73,11 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
                 <div className="flex items-center text-sm">
                   <MapPin className="h-4 w-4 mr-3 text-muted-foreground" />
                   <span className="text-muted-foreground mr-2">Location:</span>
-                  <span>{event.location}</span>
+                  <span>{event.location.address}</span>
                 </div>
               )}
 
-              {event.sourceDocument && (
+              {/* {event.sourceDocument && (
                 <div className="flex items-center text-sm">
                   <FileText className="h-4 w-4 mr-3 text-muted-foreground" />
                   <span className="text-muted-foreground mr-2">Source:</span>
@@ -84,10 +85,10 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
                     {event.sourceDocument}
                   </span>
                 </div>
-              )}
+              )} */}
             </div>
 
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="flex items-center text-sm">
                 <span className="text-muted-foreground mr-2">Confidence:</span>
                 <div className="flex-1">
@@ -102,7 +103,7 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
                   </div>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Entities */}
@@ -119,13 +120,12 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
                     className="flex items-center space-x-3 p-3 border border-border rounded-lg bg-gradient-card"
                   >
                     <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: entity.color }}
+                      className="w-3 h-3 rounded-full bg-green-700"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-sm">{entity.name}</div>
                       <div className="text-xs text-muted-foreground capitalize">
-                        {entity.type}
+                        {entity.name}
                       </div>
                     </div>
                   </div>
@@ -153,12 +153,12 @@ export const EventDetail = ({ event, relatedEvents, onClose }: EventDetailProps)
                         {format(relatedEvent.date, 'MMM dd, yyyy HH:mm')}
                       </div>
                     </div>
-                    <Badge 
+                    {/* <Badge 
                       variant="outline" 
                       className={`bg-${getEventColor(relatedEvent.category)}/20 text-${getEventColor(relatedEvent.category)} border-${getEventColor(relatedEvent.category)}/30`}
                     >
                       {relatedEvent.category}
-                    </Badge>
+                    </Badge> */}
                   </div>
                 ))}
               </div>
