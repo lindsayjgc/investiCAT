@@ -45,7 +45,7 @@ const Index = () => {
             </p>
             <Button
               size="lg"
-              onClick={() => window.location.href = '/investigation'}
+              onClick={() => window.location.href = '/add-investigation'}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className="bg-primary text-lg px-8 py-3 hover:scale-105 transition-all duration-300 shadow-glow"

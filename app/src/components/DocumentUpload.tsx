@@ -14,21 +14,25 @@ interface UploadedFile {
 
 interface DocumentUploadProps {
   onFileProcessed: (fileId: string) => void;
+  onFileAdded?: (file: File) => string;
 }
 
-export const DocumentUpload = ({ onFileProcessed }: DocumentUploadProps) => {
+export const DocumentUpload = ({ onFileProcessed, onFileAdded }: DocumentUploadProps) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const { toast } = useToast();
 
   const handleFiles = useCallback((fileList: FileList) => {
-    const newFiles: UploadedFile[] = Array.from(fileList).map(file => ({
-      id: crypto.randomUUID(),
-      name: file.name,
-      size: file.size,
-      progress: 0,
-      status: 'uploading'
-    }));
+    const newFiles: UploadedFile[] = Array.from(fileList).map(file => {
+      const fileId = onFileAdded ? onFileAdded(file) : crypto.randomUUID();
+      return {
+        id: fileId,
+        name: file.name,
+        size: file.size,
+        progress: 0,
+        status: 'uploading'
+      };
+    });
 
     setFiles(prev => [...prev, ...newFiles]);
 
@@ -36,7 +40,7 @@ export const DocumentUpload = ({ onFileProcessed }: DocumentUploadProps) => {
     newFiles.forEach(file => {
       simulateUpload(file.id);
     });
-  }, []);
+  }, [onFileAdded]);
 
   const simulateUpload = (fileId: string) => {
     const updateProgress = (progress: number, status?: UploadedFile['status']) => {
