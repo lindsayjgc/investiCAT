@@ -43,9 +43,9 @@ class InvestiCATProcessor:
             try:
                 api_key = openai_api_key or OPENAI_API_KEY
                 self.openai_client = OpenAI(api_key=api_key)
-                print("✅ OpenAI client initialized successfully")
+                print("OpenAI client initialized successfully")
             except Exception as e:
-                print(f"⚠️ OpenAI initialization failed: {e}")
+                print(f"OpenAI initialization failed: {e}")
                 print("Will use fallback event extraction")
     
     def parse_pdf(self, file_path: str) -> str:
@@ -131,7 +131,7 @@ Document text:
             return events if isinstance(events, list) else []
             
         except Exception as e:
-            print(f"⚠️ OpenAI extraction failed: {e}")
+            print(f"OpenAI extraction failed: {e}")
             return self.extract_events_fallback(text)
     
     def extract_events_fallback(self, text: str) -> List[Dict[str, Any]]:
@@ -205,20 +205,20 @@ Document text:
         Returns:
             Dict with nodes and relationships in Neo4j format
         """
-        print(f"🔍 Processing: {Path(file_path).name}")
-        print(f"📋 Investigation: {investigation_title}")
+        print(f"Processing: {Path(file_path).name}")
+        print(f"Investigation: {investigation_title}")
         
         # Extract text
         try:
             text = self.extract_text(file_path)
-            print(f"✅ Extracted {len(text)} characters")
+            print(f"Extracted {len(text)} characters")
         except Exception as e:
             raise Exception(f"Text extraction failed: {e}")
         
         # Extract events
         print("🎯 Extracting timeline events...")
         events = self.extract_events_with_openai(text)
-        print(f"✅ Found {len(events)} events")
+        print(f"Found {len(events)} events")
         
         # Generate IDs
         cat_id = self.generate_unique_id("cat")
@@ -390,7 +390,7 @@ Document text:
                     "type": "OWNS"
                 })
         
-        print("✅ Neo4j data structure generated")
+        print("Neo4j data structure generated")
         return neo4j_data
 
 def main():
@@ -413,11 +413,11 @@ def main():
         with open("/Users/maskeenkaur/investiCAT/etl/neo4j_output.json", "w") as f:
             json.dump(result, f, indent=2)
         
-        print(f"\n💾 Output saved to: /Users/maskeenkaur/investiCAT/etl/neo4j_output.json")
+        print(f"\nOutput saved to: /Users/maskeenkaur/investiCAT/etl/neo4j_output.json")
         
         # Print summary
         nodes = result["nodes"]
-        print(f"\n📊 Summary:")
+        print(f"\nSummary:")
         print(f"   Cats: {len(nodes['cats'])}")
         print(f"   Documents: {len(nodes['documents'])}")
         print(f"   Events: {len(nodes['events'])}")
@@ -427,7 +427,7 @@ def main():
         print(f"   Relationships: {len(result['relationships'])}")
         
     except Exception as e:
-        print(f"❌ Processing failed: {e}")
+        print(f"Processing failed: {e}")
 
 if __name__ == "__main__":
     main()
