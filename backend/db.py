@@ -80,6 +80,3 @@ def close_driver():
     Close the Neo4j driver (call on shutdown)
     """
     driver.close()
-
-
-create_user("123", "Test User", "test@gmail.com")
