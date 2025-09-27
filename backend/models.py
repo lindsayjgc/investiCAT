@@ -26,15 +26,15 @@ class EntityDto(BaseModel):
     name: Optional[str] = None
 
 
-class UserUserIdCatCatIdDocumentPostRequest(BaseModel):
+class DocumentPostRequest(BaseModel):
     file: Optional[bytes] = None
 
 
-class UserUserIdCatCatIdEventPostRequest(BaseModel):
+class EventPostRequest(BaseModel):
     eventId: Optional[str] = None
 
 
-class UserUserIdCatCatIdEventEventIdEntityPostRequest(BaseModel):
+class EntityPostRequest(BaseModel):
     entityId: Optional[str] = None
 
 

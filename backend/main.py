@@ -1,5 +1,5 @@
 from typing import List, Union
-
+from fastapi import HTTPException
 from fastapi import FastAPI, Path, Query
 
 from models import (
@@ -9,9 +9,11 @@ from models import (
     EventDto,
     LocationDto,
     UserDto,
-    UserUserIdCatCatIdEventEventIdEntityPostRequest,
-    UserUserIdCatCatIdEventPostRequest,
+    EntityPostRequest,
+    EventPostRequest,
 )
+
+from db import create_user, fetch_user, fetch_users, remove_user
 
 app = FastAPI(
     title='Cat API',
@@ -27,30 +29,40 @@ def post_user(body: UserDto) -> Union[None, UserDto]:
     """
     Create a new user
     """
-    pass
-
+    user_node = create_user(body.id, body.name, body.email)
+    if not user_node:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+    return {"message": "User created", "user": dict(user_node)}
 
 @app.get('/user', response_model=List[UserDto], tags=['User'])
-def get_user() -> List[UserDto]:
+def get_users() -> List[UserDto]:
     """
     Get all users
     """
-    pass
+    list_of_users = fetch_users()
+    if not list_of_users:
+        return []
+    return list_of_users
+    
 
 
 @app.get('/user/{user_id}', response_model=UserDto, tags=['User'])
-def get_user_user_id(user_id: str = Path(..., alias='userId')) -> UserDto:
+def get_user(user_id: str = Path(...)) -> UserDto:
     """
     Get a specific user
     """
-    pass
+    user_node = fetch_user(user_id)
+    if not user_node:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"user": dict(user_node)}
 
 
 @app.delete('/user/{user_id}', response_model=None, tags=['User'])
-def delete_user_user_id(user_id: str = Path(..., alias='userId')) -> None:
+def delete_user(user_id: str = Path(...)) -> None:
     """
     Delete a user
     """
+    remove_user(user_id)
     pass
 
 
@@ -60,7 +72,7 @@ def delete_user_user_id(user_id: str = Path(..., alias='userId')) -> None:
     responses={'201': {'model': CatDto}},
     tags=['Cat'],
 )
-def post_user_user_id_cat(
+def post_cat(
     user_id: str = Path(..., alias='userId'), body: CatDto = ...
 ) -> Union[None, CatDto]:
     """
@@ -70,7 +82,7 @@ def post_user_user_id_cat(
 
 
 @app.get('/user/{user_id}/cat', response_model=List[CatDto], tags=['Cat'])
-def get_user_user_id_cat(user_id: str = Path(..., alias='userId')) -> List[CatDto]:
+def get_cats(user_id: str = Path(..., alias='userId')) -> List[CatDto]:
     """
     Get all cats (timelines)
     """
@@ -78,7 +90,7 @@ def get_user_user_id_cat(user_id: str = Path(..., alias='userId')) -> List[CatDt
 
 
 @app.get('/user/{user_id}/cat/{cat_id}', response_model=CatDto, tags=['Cat'])
-def get_user_user_id_cat_cat_id(
+def get_cat(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> CatDto:
     """
@@ -88,7 +100,7 @@ def get_user_user_id_cat_cat_id(
 
 
 @app.put('/user/{user_id}/cat/{cat_id}', response_model=CatDto, tags=['Cat'])
-def put_user_user_id_cat_cat_id(
+def put_cat(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     body: CatDto = ...,
@@ -100,7 +112,7 @@ def put_user_user_id_cat_cat_id(
 
 
 @app.delete('/user/{user_id}/cat/{cat_id}', response_model=None, tags=['Cat'])
-def delete_user_user_id_cat_cat_id(
+def delete_cat(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> None:
     """
@@ -115,7 +127,7 @@ def delete_user_user_id_cat_cat_id(
     responses={'201': {'model': DocumentDto}},
     tags=['Document'],
 )
-def post_user_user_id_cat_cat_id_document(
+def post_document(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> Union[None, DocumentDto]:
     """
@@ -129,7 +141,7 @@ def post_user_user_id_cat_cat_id_document(
     response_model=List[DocumentDto],
     tags=['Document'],
 )
-def get_user_user_id_cat_cat_id_document(
+def get_documents(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> List[DocumentDto]:
     """
@@ -143,7 +155,7 @@ def get_user_user_id_cat_cat_id_document(
     response_model=DocumentDto,
     tags=['Document'],
 )
-def get_user_user_id_cat_cat_id_document_document_id(
+def get_document(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     document_id: str = Path(..., alias='documentId'),
@@ -160,13 +172,13 @@ def get_user_user_id_cat_cat_id_document_document_id(
     responses={'201': {'model': EntityDto}},
     tags=['Entity'],
 )
-def post_user_user_id_cat_cat_id_entity(
+def post_entity(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     body: EntityDto = ...,
 ) -> Union[None, EntityDto]:
     """
-    Create an entity (person/animal) who participates in events
+    Create an entity (person/organization) who participates in events
     """
     pass
 
@@ -176,7 +188,7 @@ def post_user_user_id_cat_cat_id_entity(
     response_model=List[EntityDto],
     tags=['Entity'],
 )
-def get_user_user_id_cat_cat_id_entity(
+def get_entities(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> List[EntityDto]:
     """
@@ -186,7 +198,7 @@ def get_user_user_id_cat_cat_id_entity(
 
 
 @app.delete('/user/{user_id}/cat/{cat_id}/entity', response_model=None, tags=['Entity'])
-def delete_user_user_id_cat_cat_id_entity(
+def delete_entity(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     entity_id: str = Query(..., alias='entityId'),
@@ -202,7 +214,7 @@ def delete_user_user_id_cat_cat_id_entity(
     response_model=EntityDto,
     tags=['Entity'],
 )
-def get_user_user_id_cat_cat_id_entity_entity_id(
+def get_entity(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     entity_id: str = Path(..., alias='entityId'),
@@ -216,7 +228,7 @@ def get_user_user_id_cat_cat_id_entity_entity_id(
 @app.get(
     '/user/{user_id}/cat/{cat_id}/event', response_model=List[EventDto], tags=['Event']
 )
-def get_user_user_id_cat_cat_id_event(
+def get_events(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> List[EventDto]:
     """
@@ -226,10 +238,10 @@ def get_user_user_id_cat_cat_id_event(
 
 
 @app.post('/user/{user_id}/cat/{cat_id}/event', response_model=None, tags=['Event'])
-def post_user_user_id_cat_cat_id_event(
+def post_event(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
-    body: UserUserIdCatCatIdEventPostRequest = ...,
+    body: EventPostRequest = ...,
 ) -> None:
     """
     Associate an existing event with a cat (timeline)
@@ -238,7 +250,7 @@ def post_user_user_id_cat_cat_id_event(
 
 
 @app.delete('/user/{user_id}/cat/{cat_id}/event', response_model=None, tags=['Event'])
-def delete_user_user_id_cat_cat_id_event(
+def delete_event(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     event_id: str = Query(..., alias='eventId'),
@@ -254,11 +266,11 @@ def delete_user_user_id_cat_cat_id_event(
     response_model=None,
     tags=['Entity'],
 )
-def post_user_user_id_cat_cat_id_event_event_id_entity(
+def add_entity_to_event(
     user_id: str = Path(..., alias='userId'),
     cat_id: str = Path(..., alias='catId'),
     event_id: str = Path(..., alias='eventId'),
-    body: UserUserIdCatCatIdEventEventIdEntityPostRequest = ...,
+    body: EntityPostRequest = ...,
 ) -> None:
     """
     Add an entity to an event (PARTICIPATES_IN)
@@ -271,7 +283,7 @@ def post_user_user_id_cat_cat_id_event_event_id_entity(
     response_model=List[LocationDto],
     tags=['Location'],
 )
-def get_user_user_id_cat_cat_id_location(
+def get_locations(
     user_id: str = Path(..., alias='userId'), cat_id: str = Path(..., alias='catId')
 ) -> List[LocationDto]:
     """
