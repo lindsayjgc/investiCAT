@@ -151,84 +151,31 @@ def create_cat(user_id: str, cat_data):
             # Create documents, if provided
             if getattr(cat_data, 'documents', None):
                 for doc in cat_data.documents:
-                    doc_id = doc.id if getattr(doc, 'id', None) else str(uuid.uuid4())
                     filename = getattr(doc, 'filename', None)
-                    session.run(
-                        """
-                        MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-                        CREATE (d:Document {id: $doc_id, filename: $filename})
-                        CREATE (c)-[:HAS_DOCUMENT]->(d)
-                        RETURN d
-                        """,
-                        user_id=user_id,
-                        cat_id=cat_id,
-                        doc_id=doc_id,
-                        filename=filename,
-                    )
+                    # create_document handles id generation and attaching to the cat
+                    create_document(user_id, cat_id, filename)
 
             # Create events (and their locations/entities), if provided
             if getattr(cat_data, 'events', None):
                 for ev in cat_data.events:
-                    ev_id = ev.id if getattr(ev, 'id', None) else str(uuid.uuid4())
-                    title = getattr(ev, 'title', None)
-                    summary = getattr(ev, 'summary', None)
-                    # convert datetime to ISO string if present
-                    date_val = ev.date.isoformat() if getattr(ev, 'date', None) else None
+                    # create_event will create the event node and attach to the cat
+                    created_ev = create_event(user_id, cat_id, ev)
+                    if not created_ev:
+                        continue
+                    ev_id = created_ev.get('id')
 
-                    # Create the event node and attach to cat
-                    session.run(
-                        """
-                        MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-                        CREATE (ev:Event {id: $ev_id, title: $title, summary: $summary, date: $date})
-                        CREATE (c)-[:HAS_EVENT]->(ev)
-                        RETURN ev
-                        """,
-                        user_id=user_id,
-                        cat_id=cat_id,
-                        ev_id=ev_id,
-                        title=title,
-                        summary=summary,
-                        date=date_val,
-                    )
-
-                    # Location
+                    # Location: create and attach if provided
                     if getattr(ev, 'location', None):
-                        loc = ev.location
-                        loc_id = loc.id if getattr(loc, 'id', None) else str(uuid.uuid4())
-                        address = getattr(loc, 'address', None)
-                        session.run(
-                            """
-                            MATCH (ev:Event {id: $ev_id})
-                            CREATE (loc:Location {id: $loc_id, address: $address})
-                            CREATE (ev)-[:OCCURS_AT]->(loc)
-                            RETURN loc
-                            """,
-                            ev_id=ev_id,
-                            loc_id=loc_id,
-                            address=address,
-                        )
+                        create_location(ev_id, ev.location)
 
-                    # Entities: create and link to event and to cat
+                    # Entities: create/merge and attach to cat, then link to event
                     if getattr(ev, 'entities', None):
                         for ent in ev.entities:
-                            ent_id = ent.id if getattr(ent, 'id', None) else str(uuid.uuid4())
-                            name = getattr(ent, 'name', None)
-                            # Use MERGE so entities with the same id are not duplicated
-                            session.run(
-                                """
-                                MERGE (e:Entity {id: $ent_id})
-                                SET e.name = $name
-                                WITH e
-                                MATCH (c:Cat {id: $cat_id}), (ev:Event {id: $ev_id})
-                                MERGE (c)-[:HAS_ENTITY]->(e)
-                                MERGE (e)-[:PARTICIPATES_IN]->(ev)
-                                RETURN e
-                                """,
-                                ent_id=ent_id,
-                                name=name,
-                                cat_id=cat_id,
-                                ev_id=ev_id,
-                            )
+                            created_ent = create_entity_and_attach(user_id, cat_id, ent)
+                            ent_id = created_ent.get('id') if created_ent else None
+                            if ent_id:
+                                # link existing/created entity to the event
+                                add_entity_to_event(user_id, cat_id, ev_id, ent_id)
 
             # Return the created cat node
             created = session.run("MATCH (c:Cat {id: $cat_id}) RETURN c", cat_id=cat_id)
@@ -242,14 +189,19 @@ def update_cat(user_id: str, cat_id: str, cat_data):
     """
     Update a cat's properties
     """
-    query = """
-    MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-    SET c.title = $title
+    properties_to_update = []
+    if getattr(cat_data, 'title', None) is not None:
+        properties_to_update.append("SET c.title = $title")
+    if getattr(cat_data, 'description', None) is not None:
+        properties_to_update.append("SET c.description = $description")
+    query = f"""
+    MATCH (u:User {{id: $user_id}})-[:OWNS]->(c:Cat {{id: $cat_id}})
+    {''.join(properties_to_update)}
     RETURN c
     """
     try:
         with driver.session() as session:
-            result = session.run(query, user_id=user_id, cat_id=cat_id, title=cat_data.title)
+            result = session.run(query, user_id=user_id, cat_id=cat_id, title=cat_data.title, description=cat_data.description)
             if result.peek():
                 return dict(result.single()['c'])
             return None
@@ -271,8 +223,7 @@ def remove_cat(user_id: str, cat_id: str):
         print(f"Neo4j error: {e}")
         return False
 
-
-def create_document(user_id: str, cat_id: str, filename: str):
+def create_document(user_id: str, cat_id: str, filename: str, content: bytes):
     """
     Create a document node and attach to a cat
     """
@@ -289,6 +240,8 @@ def create_document(user_id: str, cat_id: str, filename: str):
             if result.peek():
                 return dict(result.single()['d'])
             return None
+        # TODO: Send `content` to document processing service here
+        
     except Neo4jError as e:
         print(f"Neo4j error: {e}")
         return None
@@ -337,6 +290,89 @@ def create_entity(user_id: str, cat_id: str, entity_data):
             result = session.run(query, entity_id=entity_id, name=entity_data.name)
             if result.peek():
                 return dict(result.single()['e'])
+            return None
+    except Neo4jError as e:
+        print(f"Neo4j error: {e}")
+        return None
+
+
+def create_entity_and_attach(user_id: str, cat_id: str, ent_data):
+    """
+    Ensure an Entity node exists (MERGE by id if provided, otherwise create new id),
+    set its name, and attach it to the Cat via :HAS_ENTITY. Returns the entity dict.
+    """
+    try:
+        with driver.session() as session:
+            ent_id = ent_data.id if getattr(ent_data, 'id', None) else str(uuid.uuid4())
+            name = getattr(ent_data, 'name', None)
+            query = """
+            MATCH (c:Cat {id: $cat_id})
+            MERGE (e:Entity {id: $ent_id})
+            SET e.name = $name
+            MERGE (c)-[:HAS_ENTITY]->(e)
+            RETURN e
+            """
+            result = session.run(query, cat_id=cat_id, ent_id=ent_id, name=name)
+            if result.peek():
+                return dict(result.single()['e'])
+            return None
+    except Neo4jError as e:
+        print(f"Neo4j error: {e}")
+        return None
+
+
+def create_event(user_id: str, cat_id: str, ev_data):
+    """
+    Create or update an Event node and attach it to the cat. Returns the event dict.
+    """
+    try:
+        with driver.session() as session:
+            ev_id = ev_data.id if getattr(ev_data, 'id', None) else str(uuid.uuid4())
+            title = getattr(ev_data, 'title', None)
+            summary = getattr(ev_data, 'summary', None)
+            date_val = ev_data.date.isoformat() if getattr(ev_data, 'date', None) else None
+            query = """
+            MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
+            MERGE (ev:Event {id: $ev_id})
+            SET ev.title = $title, ev.summary = $summary, ev.date = $date
+            MERGE (c)-[:HAS_EVENT]->(ev)
+            RETURN ev
+            """
+            result = session.run(
+                query,
+                user_id=user_id,
+                cat_id=cat_id,
+                ev_id=ev_id,
+                title=title,
+                summary=summary,
+                date=date_val,
+            )
+            if result.peek():
+                return dict(result.single()['ev'])
+            return None
+    except Neo4jError as e:
+        print(f"Neo4j error: {e}")
+        return None
+
+
+def create_location(ev_id: str, loc_data):
+    """
+    Create or update a Location node and attach it to the given Event.
+    """
+    try:
+        with driver.session() as session:
+            loc_id = loc_data.id if getattr(loc_data, 'id', None) else str(uuid.uuid4())
+            address = getattr(loc_data, 'address', None)
+            query = """
+            MATCH (ev:Event {id: $ev_id})
+            MERGE (loc:Location {id: $loc_id})
+            SET loc.address = $address
+            MERGE (ev)-[:OCCURS_AT]->(loc)
+            RETURN loc
+            """
+            result = session.run(query, ev_id=ev_id, loc_id=loc_id, address=address)
+            if result.peek():
+                return dict(result.single()['loc'])
             return None
     except Neo4jError as e:
         print(f"Neo4j error: {e}")
@@ -447,7 +483,7 @@ def remove_event(user_id: str, cat_id: str, event_id: str):
         return False
 
 
-def add_entity_to_event_db(user_id: str, cat_id: str, event_id: str, entity_id: str):
+def add_entity_to_event(user_id: str, cat_id: str, event_id: str, entity_id: str):
     query = """
     MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})-[:HAS_EVENT]->(ev:Event {id: $event_id}),
           (c)-[:HAS_ENTITY]->(ent:Entity {id: $entity_id})

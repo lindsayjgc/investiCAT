@@ -46,6 +46,9 @@ app = FastAPI(
     description='API for managing cats (timeline), their documents, events, and related entities.',
 )
 
+# ------------------------
+# User Endpoints
+# ------------------------
 
 app.add_middleware(
     CORSMiddleware,
