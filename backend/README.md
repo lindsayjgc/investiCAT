@@ -10,10 +10,16 @@ Simple API for managing users, cats, documents, events, entities, and locations.
 
 ## Run
 
-From the root of the project:
+Navigate into the backend folder:
 
 ```bash
-uvicorn backend.main:app --reload
+cd backend
+```
+
+Start the uvicorn application:
+
+```bash
+uvicorn main:app --reload
 ```
 
 ## Documentation
