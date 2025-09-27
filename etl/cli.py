@@ -84,14 +84,14 @@ Examples:
             with open(args.output, 'w') as f:
                 json.dump(result, f, indent=2)
             if not args.quiet:
-                print(f"\n Results saved to: {args.output}")
+                print(f"\nResults saved to: {args.output}")
         else:
             print(json.dumps(result, indent=2))
         
         # Print summary unless quiet
         if not args.quiet and args.output:
             nodes = result["nodes"]
-            print(f"\n Processing Summary:")
+            print(f"\nProcessing Summary:")
             print(f"   Investigation: {args.title}")
             print(f"   Document: {file_path.name}")
             print(f"   Events extracted: {len(nodes['events'])}")
