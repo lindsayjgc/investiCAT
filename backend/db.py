@@ -501,20 +501,89 @@ def fetch_cats(user_id: str):
 
 def fetch_cat(user_id: str, cat_id: str):
     """
-    Retrieves a specific cat for a specific user
-    """
-    query = """
-    MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-    RETURN c
+    Retrieves a specific cat for a specific user and returns related nodes:
+    documents, events (with per-event location and entities), locations, entities
     """
     try:
         with driver.session() as session:
-            result = session.run(query, user_id=user_id, cat_id=cat_id)
-            print(result.data())
-            return dict(result.single()['c']) if result.peek() else None
+            # Cat node
+            cat_res = session.run(
+                "MATCH (u:User {id:$user_id})-[:OWNS]->(c:Cat {id:$cat_id}) RETURN c",
+                user_id=user_id,
+                cat_id=cat_id,
+            )
+            if not cat_res.peek():
+                return None
+            cat = dict(cat_res.single()['c'])
+
+            # Documents
+            docs_res = session.run(
+                "MATCH (u:User {id:$user_id})-[:OWNS]->(c:Cat {id:$cat_id})-[:HAS_DOCUMENT]->(d:Document) RETURN d",
+                user_id=user_id,
+                cat_id=cat_id,
+            )
+            documents = [dict(r['d']) for r in docs_res.data() if r.get('d') is not None]
+
+            # Events with per-event locations and entities
+            ev_query = """
+            MATCH (u:User {id:$user_id})-[:OWNS]->(c:Cat {id:$cat_id})-[:HAS_EVENT]->(ev:Event)
+            OPTIONAL MATCH (ev)-[:OCCURS_AT]->(loc:Location)
+            OPTIONAL MATCH (ev)<-[:PARTICIPATES_IN]-(ent:Entity)
+            RETURN ev, collect(DISTINCT loc) AS locs, collect(DISTINCT ent) AS ents
+            """
+            events = []
+            all_event_locs = []
+            all_event_ents = []
+            for r in session.run(ev_query, user_id=user_id, cat_id=cat_id).data():
+                ev = dict(r['ev']) if r.get('ev') is not None else None
+                locs = [dict(l) for l in (r.get('locs') or []) if l is not None]
+                ents = [dict(e) for e in (r.get('ents') or []) if e is not None]
+                if ev is None:
+                    continue
+                ev['location'] = locs[0] if len(locs) else None
+                ev['entities'] = ents
+                events.append(ev)
+                all_event_locs.extend(locs)
+                all_event_ents.extend(ents)
+
+            # Cat-level entities (HAS_ENTITY)
+            cat_ent_res = session.run(
+                "MATCH (u:User {id:$user_id})-[:OWNS]->(c:Cat {id:$cat_id})-[:HAS_ENTITY]->(e:Entity) RETURN e",
+                user_id=user_id,
+                cat_id=cat_id,
+            )
+            cat_entities = [dict(r['e']) for r in cat_ent_res.data() if r.get('e') is not None]
+
+            # Deduplicate entities by id (merge event entities + cat-level entities)
+            entities_map = {}
+            for e in (all_event_ents + cat_entities):
+                if not e:
+                    continue
+                eid = e.get('id')
+                if eid:
+                    entities_map[eid] = e
+            entities = list(entities_map.values())
+
+            # Deduplicate locations by id (from events)
+            loc_map = {}
+            for l in all_event_locs:
+                if not l:
+                    continue
+                lid = l.get('id')
+                if lid:
+                    loc_map[lid] = l
+            locations = list(loc_map.values())
+
+            return {
+                'cat': cat,
+                'documents': documents,
+                'events': events,
+                'locations': locations,
+                'entities': entities,
+            }
     except Neo4jError as e:
         print(f"Neo4j error: {e}")
-        return None
+        return
 
 def close_driver():
     """
