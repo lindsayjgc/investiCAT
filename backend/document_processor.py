@@ -32,8 +32,11 @@ class Event(BaseModel):
     title: str = Field(..., max_length=200,
                        description="Brief descriptive title of the event")
     summary: str = Field(..., description="Detailed description of the event")
-    date: str = Field(..., description="Date of the event in YYYY-MM-DD format",
-                      pattern=r"^\d{4}-\d{2}-\d{2}$")
+    date: str = Field(
+        ...,
+        description="Date of the event in YYYY-MM-DD format",
+        pattern=r"^(?:(?:19|20)\d{2})-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12][0-9]|3[01])$"
+    )
     location: Optional[str] = Field(...,
                                     description="Specific location/address of the event")
     entities: List[str] = Field(
@@ -54,9 +57,9 @@ def extract_text_from_pdf(file_path: str) -> str:
 def process_document(file_path: str) -> CAT:
     text = extract_text_from_pdf(file_path)
     response = openai_client.responses.parse(
-        model="gpt-5",
+        model="gpt-5-mini",
         reasoning={
-            "effort": "moderate",
+            "effort": "low",
         },
         input=[
             {"role": "system", "content": SYSTEM_PROMPT},

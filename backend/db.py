@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import uuid
-from backend.models import DocumentDto
+from models import DocumentDto
 import tempfile
 from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
@@ -11,6 +11,7 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[1]))  # add repo root to path
 from etl.document_processor_neo4j import InvestiCATProcessor
 from etl.neo4j_loader import InvestiCATNeo4jLoader
+from datetime import datetime
 
 from document_processor import CAT, process_document
 
@@ -659,13 +660,14 @@ def add_events(user_id: str, cat_id: str, parsed_cat: CAT) -> list[str]:
                 date_val: str = ev.date if getattr(ev, 'date', None) else None
                 location: str = getattr(ev, 'location', None)
                 entities: list[str] = getattr(ev, 'entities', None)
+                print(f"Adding event: {title}, {summary}, {date_val}, loc={location}, ents={entities}")
 
                 event_ids.append(ev_id)
 
                 # Create or update Event node and attach to Cat
                 event_query = """
                 MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-                MERGE (ev:Event {id: $ev_id})
+                MERGE (ev:Event {id: $ev_id, date: $date_val})
                 SET ev.title = $title, ev.summary = $summary
                 MERGE (c)-[:HAS_EVENT]->(ev)
                 RETURN ev
@@ -676,6 +678,7 @@ def add_events(user_id: str, cat_id: str, parsed_cat: CAT) -> list[str]:
                     cat_id=cat_id,
                     ev_id=ev_id,
                     title=title,
+                    date_val=datetime.strptime(date_val, "%Y-%m-%d").isoformat(),
                     summary=summary,
                 )
                 if not result.peek():
@@ -684,10 +687,9 @@ def add_events(user_id: str, cat_id: str, parsed_cat: CAT) -> list[str]:
                 ev_id = created_ev.get('id')
 
                 # Location: create and attach if provided
-                if getattr(ev, 'location', None):
-                    loc_data: str = ev.location
-                    loc_id = loc_data
-                    address = loc_data
+                if location:
+                    loc_id: str = location
+                    address = location
                     loc_query = """
                     MATCH (ev:Event {id: $ev_id})
                     MERGE (loc:Location {id: $loc_id})
@@ -698,18 +700,19 @@ def add_events(user_id: str, cat_id: str, parsed_cat: CAT) -> list[str]:
                     session.run(loc_query, ev_id=ev_id, loc_id=loc_id, address=address)
 
                 # Entities: create/merge and attach to cat, then link to event
-                if getattr(ev, 'entities', None):
-                    for ent in ev.entities:
+                if entities:
+                    for ent in entities:
                         ent_id = ent
                         name = ent
                         ent_query = """
-                        MATCH (c:Cat {id: $cat_id})
-                        MERGE (e:Entity {id: $ent_id})
-                        SET e.name = $name
-                        MERGE (c)-[:HAS_ENTITY]->(e)
-                        RETURN e
+                        MATCH (c:Cat {id: $cat_id}), (ev:Event {id: $ev_id})
+                        MERGE (en:Entity {id: $ent_id})
+                        SET en.name = $name
+                        MERGE (en)-[:PARTICIPATES_IN]->(ev)
+                        RETURN en
                         """
-                        session.run(ent_query, cat_id=cat_id, ent_id=ent_id, name=name)
+                        session.run(ent_query, cat_id=cat_id, ev_id=ev_id, ent_id=ent_id, name=name)
+
             return event_ids
     except Exception as e:
         print(f"Neo4j error: {e}")
