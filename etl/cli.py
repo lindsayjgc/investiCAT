@@ -20,6 +20,8 @@ Examples:
   %(prog)s document.docx -o output.json         # Process DOCX with custom output
   %(prog)s file.pdf --openai-key YOUR_KEY      # Use OpenAI for extraction
   %(prog)s file.pdf --pretty                   # Pretty print output to console
+  %(prog)s file.pdf --load-neo4j               # Process and load into Neo4j
+  %(prog)s file.pdf --load-neo4j --neo4j-clear # Clear database, then load
 
 Output:
   Generates Neo4j-compatible JSON with document-level nodes and relationships.
@@ -57,6 +59,24 @@ Note:
         '--summary',
         action='store_true', 
         help='Show processing summary'
+    )
+    
+    parser.add_argument(
+        '--load-neo4j',
+        action='store_true',
+        help='Load processed data directly into Neo4j database'
+    )
+    
+    parser.add_argument(
+        '--neo4j-uri', 
+        default='neo4j://localhost:7687',
+        help='Neo4j database URI (default: neo4j://localhost:7687)'
+    )
+    
+    parser.add_argument(
+        '--neo4j-clear',
+        action='store_true',
+        help='Clear Neo4j database before loading (use with --load-neo4j)'
     )
     
     args = parser.parse_args()
@@ -125,6 +145,55 @@ Note:
                     print(f"  {rel_type}: {count}")
             
             print(f"\nScope: Document-level ETL (Cat nodes handled by frontend)")
+    
+        # Load into Neo4j if requested
+        if args.load_neo4j:
+            print(f"\n" + "="*40)
+            print("NEO4J DATABASE LOADING")
+            print("="*40)
+            
+            try:
+                from neo4j_loader import InvestiCATNeo4jLoader
+                
+                # Initialize Neo4j loader
+                loader = InvestiCATNeo4jLoader(uri=args.neo4j_uri)
+                
+                # Connect to Neo4j
+                if loader.connect():
+                    # Clear database if requested
+                    if args.neo4j_clear:
+                        print("Clearing Neo4j database...")
+                        loader.clear_database(confirm=True)
+                    
+                    # Create constraints
+                    loader.create_constraints()
+                    
+                    # Load data
+                    print("Loading data into Neo4j...")
+                    success = loader.load_document_data(result)
+                    
+                    if success:
+                        print("Data loaded successfully into Neo4j!")
+                        
+                        # Show Neo4j stats
+                        stats = loader.get_database_stats()
+                        print("\nNeo4j Database Statistics:")
+                        for key, value in stats.items():
+                            print(f"  {key}: {value}")
+                        
+                        print(f"\nAccess Neo4j Browser: http://localhost:7474")
+                    else:
+                        print("Failed to load data into Neo4j")
+                    
+                    loader.close()
+                else:
+                    print("Failed to connect to Neo4j database")
+                    print("Make sure Neo4j is running and credentials are correct")
+                    
+            except ImportError:
+                print("Neo4j loader not available. Install with: pip install neo4j")
+            except Exception as e:
+                print(f"Neo4j loading error: {e}")
     
     except Exception as e:
         print(f"Error processing document: {e}")

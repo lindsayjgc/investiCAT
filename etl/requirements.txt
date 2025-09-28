@@ -8,6 +8,9 @@ python-docx>=1.1.0
 # AI and NLP
 openai>=1.0.0
 
+# Neo4j database
+neo4j>=5.0.0
+
 # Core utilities  
 # uuid
 # pathlib

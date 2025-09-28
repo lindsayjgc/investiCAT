@@ -54,6 +54,51 @@ pip install -r requirements.txt
 # - pdfplumber (PDF parsing)
 # - python-docx (DOCX parsing) 
 # - openai (optional, for enhanced extraction)
+# - neo4j (database connectivity)
+```
+
+## Complete Workflow
+
+The InvestiCAT ETL system provides a complete pipeline from document processing to Neo4j storage:
+
+### 1. Document Processing
+Extract timeline data from investigative documents:
+
+```bash
+# Process a document and save JSON
+python cli.py document.pdf -o output.json
+
+# Process with OpenAI enhancement
+python cli.py document.pdf --openai-key YOUR_KEY --summary
+```
+
+### 2. Neo4j Database Loading  
+Load processed data into Neo4j database:
+
+```bash
+# Load JSON data into Neo4j
+python neo4j_loader.py output.json
+
+# Clear database first, then load
+python neo4j_loader.py output.json --clear
+
+# Show database statistics
+python neo4j_loader.py --stats
+```
+
+### 3. End-to-End Testing
+Run complete workflow test:
+
+```bash
+# Test document processing + Neo4j loading
+python test_e2e.py
+```
+pip install -r requirements.txt
+
+# Required packages:
+# - pdfplumber (PDF parsing)
+# - python-docx (DOCX parsing) 
+# - openai (optional, for enhanced extraction)
 ```
 
 ## Usage
