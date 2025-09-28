@@ -18,6 +18,7 @@ import re
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 from pathlib import Path
+from io import BytesIO
 
 # Document parsing libraries
 try:
@@ -89,6 +90,34 @@ class InvestiCATProcessor:
             return text.strip()
         except Exception as e:
             raise Exception(f"Failed to parse DOCX: {e}")
+
+    def parse_pdf_bytes(self, content: bytes) -> str:
+        """Extract text from PDF bytes using pdfplumber."""
+        if not pdfplumber:
+            raise ImportError("pdfplumber not installed. Run: pip install pdfplumber")
+        try:
+            text = ""
+            with pdfplumber.open(BytesIO(content)) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
+            return text.strip()
+        except Exception as e:
+            raise Exception(f"Failed to parse PDF content: {e}")
+
+    def parse_docx_bytes(self, content: bytes) -> str:
+        """Extract text from DOCX bytes using python-docx."""
+        if not DocxDocument:
+            raise ImportError("python-docx not installed. Run: pip install python-docx")
+        try:
+            doc = DocxDocument(BytesIO(content))
+            text = ""
+            for paragraph in doc.paragraphs:
+                text += paragraph.text + "\n"
+            return text.strip()
+        except Exception as e:
+            raise Exception(f"Failed to parse DOCX content: {e}")
     
     def extract_text(self, file_path: str) -> str:
         """Extract text from PDF or DOCX file."""
@@ -98,6 +127,16 @@ class InvestiCATProcessor:
             return self.parse_pdf(file_path)
         elif file_ext == '.docx':
             return self.parse_docx(file_path)
+        else:
+            raise ValueError(f"Unsupported file type: {file_ext}. Only PDF and DOCX supported.")
+
+    def extract_text_from_content(self, filename: str, content: bytes) -> str:
+        """Extract text from in-memory file content based on filename extension."""
+        file_ext = Path(filename).suffix.lower()
+        if file_ext == '.pdf':
+            return self.parse_pdf_bytes(content)
+        elif file_ext == '.docx':
+            return self.parse_docx_bytes(content)
         else:
             raise ValueError(f"Unsupported file type: {file_ext}. Only PDF and DOCX supported.")
     
@@ -253,24 +292,35 @@ Document text:
         except Exception:
             return f"{date_str}T00:00:00Z"
     
-    def process_document(self, file_path: str) -> Dict[str, Any]:
+    def process_document(self, file_path: Optional[str] = None, *, filename: Optional[str] = None, content: Optional[bytes] = None) -> Dict[str, Any]:
         """
         Process document and return Neo4j-compatible data structure.
         
         SCOPE: Document-level processing only. Does NOT create Cat nodes or relationships.
         
         Args:
-            file_path: Path to PDF or DOCX file
+            file_path: Path to PDF or DOCX file (legacy path-based processing)
+            filename: Original filename including extension (required when providing content)
+            content: Raw file bytes (PDF or DOCX)
             
         Returns:
             Dict with nodes and relationships in Neo4j format following required schema
         """
-        filename = Path(file_path).name
-        print(f"Processing document: {filename}")
+        if file_path:
+            file_name_resolved = Path(file_path).name
+        elif filename and content is not None:
+            file_name_resolved = filename
+        else:
+            raise ValueError("Provide either file_path or (filename and content) for processing.")
+
+        print(f"Processing document: {file_name_resolved}")
         
         # Extract text from document
         try:
-            text = self.extract_text(file_path)
+            if file_path:
+                text = self.extract_text(file_path)
+            else:
+                text = self.extract_text_from_content(file_name_resolved, content)  # type: ignore[arg-type]
             print(f"Extracted {len(text)} characters from document")
         except Exception as e:
             raise Exception(f"Text extraction failed: {e}")
@@ -289,8 +339,8 @@ Document text:
             "nodes": {
                 "documents": [
                     {
-                        "id": doc_id,
-                        "filename": filename
+            "id": doc_id,
+            "filename": file_name_resolved
                     }
                 ],
                 "events": [],
@@ -405,7 +455,7 @@ Document text:
             neo4j_data["nodes"]["events"].append({
                 "id": default_event_id,
                 "title": "Document processed",
-                "summary": f"Document {filename} was processed for timeline extraction"
+                "summary": f"Document {file_name_resolved} was processed for timeline extraction"
             })
             
             neo4j_data["nodes"]["dates"].append({
