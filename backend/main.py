@@ -1,6 +1,8 @@
 from typing import List, Union
 from fastapi import HTTPException
 from fastapi import FastAPI, Path, Query
+from fastapi.middleware.cors import CORSMiddleware
+
 
 from models import (
     CatDto,
@@ -41,6 +43,15 @@ app = FastAPI(
     title='Cat API',
     version='2.1.0',
     description='API for managing cats (timeline), their documents, events, and related entities.',
+)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # ------------------------
