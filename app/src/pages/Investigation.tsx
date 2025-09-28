@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Clock, Users, Filter } from 'lucide-react';
 import { getUserByUserIdCatByCatId, postUserByUserIdCatByCatIdDocument } from '@/client';
 import { DEFAULT_USER_ID } from '@/App';
+import { set } from 'date-fns';
 
 const Investigation = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +43,8 @@ const Investigation = () => {
       })
       )
     );
+
+    setShowUpload(false);
   };
 
   const filteredEventsCount = cat?.events.filter(event => {
