@@ -1,45 +1,59 @@
-# InvestiCAT Document Processor
+# InvestiCAT Document Processor - ETL Module
 
-A Python document processing tool for investigative journalism that extracts timeline events from PDF and DOCX documents and outputs structured data for Neo4j graph database.
+Document-level ETL processor for investigative journalism that extracts structured timeline data from PDF/DOCX documents for Neo4j graph database storage.
 
-## Overview
+## System Architecture
 
-The InvestiCAT Document Processor transforms investigative documents into a structured timeline format suitable for Neo4j graph database analysis. It uses AI-powered event extraction and provides fallback pattern matching for robust processing.
+The InvestiCAT system has clear separation of concerns:
+
+- **Frontend/API**: Manages investigations (Cat nodes) and orchestrates document processing  
+- **ETL Processor** (this module): Processes individual documents and extracts structured timeline data
+- **Neo4j Database**: Stores the complete investigation graph
+
+## ETL Processor Scope
+
+This ETL processor handles **document-level processing only**:
+
+### GENERATES:
+- Document nodes (from processed files)
+- Events extracted from document content
+- Dates, Locations, Entities mentioned in events  
+- User nodes (system users)
+- Document-level relationships only
+
+### DOES NOT GENERATE:
+- Cat nodes (investigations created by frontend)
+- Any Cat relationships (HAS_DOCUMENT, HAS_EVENT, OWNS)
 
 ## Neo4j Schema
 
-### Node Types
-- **Cat**: Investigation cases (`id`, `title`)
-- **Document**: Source documents (`id`, `filename`)
-- **Event**: Timeline events (`id`, `title`, `summary`)
-- **Date**: Event dates (`date` in ISO format)
-- **Location**: Geographic locations (`id`, `address`)
-- **Entity**: People and organizations (`id`, `name`)
-- **User**: System users (`id`, `email`, `name`, `password`)
+### Nodes (with properties):
+- **Cat**: Investigation cases (id: string, title: string) - *Created by frontend*
+- **Document**: Source documents (id: string, filename: string)
+- **Event**: Timeline events (id: string, title: string, summary: string)  
+- **Date**: Event dates (date: datetime) - **NO ID FIELD**
+- **Location**: Geographic locations (id: string, address: string)
+- **Entity**: People/organizations (id: string, name: string)
+- **User**: System users (id: string, email: string, name: string, password: string)
 
-### Relationships
-- `User -[OWNS]-> Cat`
-- `Cat -[HAS_DOCUMENT]-> Document`
-- `Cat -[HAS_EVENT]-> Event`
-- `Document -[MENTIONS]-> Event`
-- `Event -[OCCURRED_ON]-> Date`
-- `Event -[OCCURRED_AT]-> Location`
-- `Entity -[PARTICIPATES_IN]-> Event`
+### Relationships:
+- **Document** -[MENTIONS]-> **Event** (document mentions extracted events)
+- **Event** -[OCCURRED_ON]-> **Date** (event happened on specific date)
+- **Event** -[OCCURRED_AT]-> **Location** (event happened at location)
+- **Entity** -[PARTICIPATES_IN]-> **Event** (entity involved in event)
+
+*Note: Cat relationships (User -[OWNS]-> Cat, Cat -[HAS_DOCUMENT]-> Document, Cat -[HAS_EVENT]-> Event) are handled by frontend*
 
 ## Installation
 
-### Prerequisites
-- Python 3.8 or higher
-- OpenAI API key (optional, for AI extraction)
-
-### Dependencies
 ```bash
-pip install pdfplumber python-docx openai reportlab
-```
-
-Or install from requirements.txt:
-```bash
+# Install required dependencies
 pip install -r requirements.txt
+
+# Required packages:
+# - pdfplumber (PDF parsing)
+# - python-docx (DOCX parsing) 
+# - openai (optional, for enhanced extraction)
 ```
 
 ## Usage
@@ -47,17 +61,17 @@ pip install -r requirements.txt
 ### Command Line Interface
 
 ```bash
-# Basic usage - process PDF with investigation title
-python cli.py document.pdf -t "Investigation Title"
+# Process a PDF document
+python cli.py document.pdf
 
-# Save to JSON file
-python cli.py report.docx -t "Corporate Investigation" -o results.json
+# Process with custom output file
+python cli.py document.docx -o output.json
 
-# Use fallback extraction only (no OpenAI)
-python cli.py file.pdf -t "Investigation" --no-ai
+# Use OpenAI for enhanced extraction
+python cli.py file.pdf --openai-key YOUR_KEY
 
-# Quiet mode (minimal output)
-python cli.py document.pdf -t "Investigation" -o results.json --quiet
+# Pretty print to console with summary
+python cli.py file.pdf --pretty --summary
 ```
 
 ### Python API
@@ -66,203 +80,139 @@ python cli.py document.pdf -t "Investigation" -o results.json --quiet
 from document_processor_neo4j import InvestiCATProcessor
 
 # Initialize processor
-processor = InvestiCATProcessor(openai_api_key="your-api-key")
+processor = InvestiCATProcessor()
 
-# Process document
-result = processor.process_document("document.pdf", "Investigation Title")
+# Process document (returns Neo4j-compatible structure)
+result = processor.process_document("path/to/document.pdf")
 
-# Access Neo4j data
-print(f"Events found: {len(result['nodes']['events'])}")
-print(f"Entities: {len(result['nodes']['entities'])}")
-print(f"Relationships: {len(result['relationships'])}")
-```
-
-### Main Function
-```python
-def process_document(file_path: str, investigation_title: str) -> dict:
-    """
-    Process document and return Neo4j-compatible data structure.
-    
-    Args:
-        file_path: Path to PDF or DOCX file
-        investigation_title: Title of the investigation
-        
-    Returns:
-        Dict with nodes and relationships in Neo4j format
-    """
+# Save results
+import json
+with open("output.json", "w") as f:
+    json.dump(result, f, indent=2)
 ```
 
 ## Output Format
 
-The processor generates JSON in this exact Neo4j-compatible structure:
+The processor generates Neo4j-compatible JSON following this schema:
 
 ```json
 {
   "nodes": {
-    "cats": [{"id": "cat_1", "title": "Investigation Name"}],
-    "documents": [{"id": "doc_1", "filename": "file.pdf"}],
-    "events": [{"id": "event_1", "title": "Meeting", "summary": "Description"}],
-    "dates": [{"date": "2024-01-15T00:00:00Z"}],
-    "locations": [{"id": "loc_1", "address": "123 Main St"}],
-    "entities": [{"id": "entity_1", "name": "John Doe"}],
-    "users": [{"id": "user_1", "email": "journalist@example.com", "name": "System User", "password": "placeholder"}]
+    "documents": [
+      {
+        "id": "doc_a1b2c3d4", 
+        "filename": "merger_agreement.pdf"
+      }
+    ],
+    "events": [
+      {
+        "id": "event_1",
+        "title": "Board approved acquisition", 
+        "summary": "Board of Directors approved the acquisition..."
+      }
+    ],
+    "dates": [
+      {
+        "date": "2024-03-15T00:00:00Z"
+      }
+    ],
+    "locations": [
+      {
+        "id": "loc_1",
+        "address": "New York City"
+      }
+    ],
+    "entities": [
+      {
+        "id": "entity_1", 
+        "name": "MegaCorp Inc"
+      }
+    ],
+    "users": [
+      {
+        "id": "user_a1b2c3d4",
+        "email": "journalist@example.com",
+        "name": "System User", 
+        "password": "placeholder"
+      }
+    ]
   },
   "relationships": [
-    {"from_node": "user_1", "to_node": "cat_1", "type": "OWNS"},
-    {"from_node": "cat_1", "to_node": "doc_1", "type": "HAS_DOCUMENT"},
-    {"from_node": "event_1", "to_node": "date_1", "type": "OCCURRED_ON"}
+    {
+      "from_node": "doc_a1b2c3d4",
+      "to_node": "event_1", 
+      "type": "MENTIONS"
+    },
+    {
+      "from_node": "event_1",
+      "to_node": "2024-03-15T00:00:00Z",
+      "type": "OCCURRED_ON"
+    },
+    {
+      "from_node": "event_1", 
+      "to_node": "loc_1",
+      "type": "OCCURRED_AT"
+    },
+    {
+      "from_node": "entity_1",
+      "to_node": "event_1",
+      "type": "PARTICIPATES_IN"
+    }
   ]
 }
 ```
 
-## Features
+## Event Extraction
 
-### Document Processing
-- **PDF Support**: Uses pdfplumber for reliable text extraction
-- **DOCX Support**: Uses python-docx for Word document processing
-- **Error Handling**: Robust error handling with informative messages
+The processor uses two methods for event extraction:
 
-### Event Extraction
-- **AI-Powered**: Uses OpenAI GPT-4o-mini for intelligent event detection
-- **Fallback Processing**: Pattern-based extraction when AI is unavailable
-- **Timeline Focus**: Extracts events with dates, locations, and participants
+1. **OpenAI API** (if API key provided): Advanced natural language processing for high-quality event extraction
+2. **Fallback Pattern Matching**: Regex-based extraction focusing on investigative journalism keywords
 
-### Neo4j Integration
-- **Unique IDs**: Generates unique identifiers for all nodes
-- **Complete Schema**: Creates all required node types and relationships
-- **Direct Import**: Output ready for Neo4j database import
+### Event Types Detected:
+- Meetings, transactions, announcements
+- Approvals, signings, filings
+- Investigations, rulings, decisions
+- Contracts, agreements, mergers
+
+## Files
+
+- **`document_processor_neo4j.py`**: Main processor class
+- **`cli.py`**: Command-line interface
+- **`test_processor.py`**: Comprehensive test suite
+- **`requirements.txt`**: Python dependencies
+
+## Testing
+
+```bash
+# Run comprehensive tests
+python test_processor.py
+
+# Test with sample data
+python document_processor_neo4j.py
+```
+
+## Integration
+
+This ETL module integrates with the larger InvestiCAT system:
+
+1. **Frontend** creates Cat nodes and manages investigations
+2. **ETL Processor** (this module) processes individual documents
+3. **Frontend** combines Cat + Document data for complete Neo4j graph
+4. **Neo4j Database** stores the unified investigation graph
+
+The separation ensures scalability and clear responsibility boundaries.
 
 ## Configuration
 
-### OpenAI API Key
-Set your OpenAI API key in the processor initialization:
+Set OpenAI API key for enhanced extraction:
+
+```bash
+export OPENAI_API_KEY="your-api-key-here"
+```
+
+Or pass directly to processor:
 
 ```python
-# In code
-processor = InvestiCATProcessor(openai_api_key="your-key-here")
-
-# Or modify the default in document_processor_neo4j.py
-OPENAI_API_KEY = "your-api-key"
+processor = InvestiCATProcessor(openai_api_key="your-api-key")
 ```
-
-### Processing Options
-- **AI Extraction**: Uses OpenAI for intelligent event detection
-- **Fallback Mode**: Pattern-based extraction for offline processing
-- **Quiet Mode**: Suppress progress messages for batch processing
-
-## Examples
-
-### Corporate Investigation
-```bash
-python cli.py merger_documents.pdf -t "MegaCorp Acquisition Analysis" -o merger_data.json
-```
-
-### Government Document Analysis
-```bash
-python cli.py government_report.docx -t "Policy Investigation" -o policy_data.json
-```
-
-### Batch Processing
-```python
-import os
-from document_processor_neo4j import InvestiCATProcessor
-
-processor = InvestiCATProcessor()
-
-for filename in os.listdir("documents/"):
-    if filename.endswith(('.pdf', '.docx')):
-        result = processor.process_document(f"documents/{filename}", "Batch Investigation")
-        with open(f"output/{filename}.json", "w") as f:
-            json.dump(result, f, indent=2)
-```
-
-## Neo4j Import
-
-To import the processed data into Neo4j:
-
-```cypher
-// Load JSON data
-WITH $data AS data
-
-// Create Cat nodes
-UNWIND data.nodes.cats AS cat
-CREATE (:Cat {id: cat.id, title: cat.title})
-
-// Create Document nodes
-UNWIND data.nodes.documents AS doc
-CREATE (:Document {id: doc.id, filename: doc.filename})
-
-// Create Event nodes
-UNWIND data.nodes.events AS event
-CREATE (:Event {id: event.id, title: event.title, summary: event.summary})
-
-// Create Date nodes
-UNWIND data.nodes.dates AS date
-CREATE (:Date {date: datetime(date.date)})
-
-// Create Location nodes
-UNWIND data.nodes.locations AS loc
-CREATE (:Location {id: loc.id, address: loc.address})
-
-// Create Entity nodes
-UNWIND data.nodes.entities AS entity
-CREATE (:Entity {id: entity.id, name: entity.name})
-
-// Create relationships
-UNWIND data.relationships AS rel
-MATCH (from {id: rel.from_node}), (to {id: rel.to_node})
-CALL apoc.create.relationship(from, rel.type, {}, to) YIELD rel as relationship
-RETURN relationship
-```
-
-## Error Handling
-
-The processor includes comprehensive error handling:
-
-- **File Not Found**: Clear error message with file path
-- **Unsupported Format**: Validation of PDF/DOCX file types
-- **Text Extraction Errors**: Fallback methods for document parsing
-- **API Failures**: Graceful fallback to pattern-based extraction
-- **Missing Dependencies**: Clear installation instructions
-
-## Troubleshooting
-
-### Common Issues
-
-1. **OpenAI API Errors**
-   - Check API key validity
-   - Use `--no-ai` flag for offline processing
-
-2. **PDF Parsing Errors**
-   - Ensure PDF is not password-protected
-   - Check file corruption
-
-3. **Missing Dependencies**
-   ```bash
-   pip install pdfplumber python-docx openai
-   ```
-
-4. **Memory Issues with Large Files**
-   - Process files in smaller chunks
-   - Use text extraction limits
-
-## Development
-
-### Project Structure
-```
-etl/
-├── document_processor_neo4j.py  # Main processor class
-├── cli.py                       # Command-line interface
-├── requirements.txt            # Dependencies
-└── README.md                   # This file
-```
-
-### Contributing
-1. Follow Python PEP 8 style guidelines
-2. Add comprehensive docstrings
-3. Include error handling for new features
-4. Test with various document types
-
-## License
-
-This project is part of the InvestiCAT investigative journalism toolkit.
