@@ -192,3 +192,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+*.env
+app/node_modules
