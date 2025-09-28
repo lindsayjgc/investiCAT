@@ -34,7 +34,7 @@ from db import (
     fetch_events,
     associate_event_with_cat,
     remove_event,
-    add_entity_to_event_db,
+    add_entity_to_event,
     fetch_locations,
 )
 
@@ -403,7 +403,7 @@ def add_entity_to_event(
     if not fetch_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
 
-    res = add_entity_to_event_db(user_id, cat_id, event_id, body.entityId)
+    res = add_entity_to_event(user_id, cat_id, event_id, body.entityId)
     if not res:
         raise HTTPException(status_code=500, detail="Failed to add entity to event")
     return {"message": "Entity added to event", "result": res}

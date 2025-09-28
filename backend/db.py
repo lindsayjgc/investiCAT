@@ -223,8 +223,7 @@ def remove_cat(user_id: str, cat_id: str):
         print(f"Neo4j error: {e}")
         return False
 
-# TODO: must integrate with document processing
-def create_document(user_id: str, cat_id: str, filename: str):
+def create_document(user_id: str, cat_id: str, filename: str, content: bytes):
     """
     Create a document node and attach to a cat
     """
@@ -241,6 +240,8 @@ def create_document(user_id: str, cat_id: str, filename: str):
             if result.peek():
                 return dict(result.single()['d'])
             return None
+        # TODO: Send `content` to document processing service here
+        
     except Neo4jError as e:
         print(f"Neo4j error: {e}")
         return None
