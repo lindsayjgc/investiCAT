@@ -56,7 +56,7 @@ const AddInvestigation = () => {
       const uploadPromises = uploadedFiles.map(async (file) => {
         try {
           const result = await postUserByUserIdCatByCatIdDocument({
-            body: { file },
+            body: { file, filename: file.name },
             path: { userId: DEFAULT_USER_ID, catId }
           });
           console.log(`Successfully uploaded document ${file.name} to cat ${catId}`);
@@ -66,7 +66,7 @@ const AddInvestigation = () => {
           throw error;
         }
       });
-      
+      console.log(uploadedFiles);
       // Wait for all uploads to complete
       await Promise.all(uploadPromises);
 

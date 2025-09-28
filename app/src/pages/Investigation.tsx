@@ -165,11 +165,11 @@ const Investigation = () => {
 
   const handleFilesChanged = async (files: File[]) => {
     await Promise.all(
-      files.map((file) =>
-        postUserByUserIdCatByCatIdDocument({
-          body: { file },
-          path: { userId: DEFAULT_USER_ID, catId: id },
-        })
+      files.map(file =>
+      postUserByUserIdCatByCatIdDocument({
+        body: { file, filename: file.name },
+        path: { userId: DEFAULT_USER_ID, catId: id }
+      })
       )
     );
 

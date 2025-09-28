@@ -1,34 +1,62 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { FileText, Search, Clock, Users, ArrowRight, Plus, MessageSquare } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import {
+  FileText,
+  Search,
+  Clock,
+  Users,
+  ArrowRight,
+  Plus,
+  MessageSquare,
+} from "lucide-react";
+import { CatDto, getUserByUserIdCat } from "@/client";
+import { DEFAULT_USER_ID } from "@/App";
 
 const Index = () => {
   const [isHovered, setIsHovered] = useState(false);
+  const [cats, setCats] = useState<CatDto[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fetch list of CATs from backend if needed
+    // setCats(fetchedCats);
+
+    const fetchData = async () => {
+      const response = await getUserByUserIdCat({
+        path: { userId: DEFAULT_USER_ID },
+      });
+      setCats(response.data);
+    };
+    fetchData();
+  }, []);
 
   const features = [
     {
       icon: FileText,
-      title: 'Document Analysis',
-      description: 'Upload and process documents to extract key events and entities automatically.'
+      title: "Document Analysis",
+      description:
+        "Upload and process documents to extract key events and entities automatically.",
     },
     {
       icon: Clock,
-      title: 'Timeline Visualization',
-      description: 'View events chronologically with interactive timeline showing relationships.'
+      title: "Timeline Visualization",
+      description:
+        "View events chronologically with interactive timeline showing relationships.",
     },
     {
       icon: Search,
-      title: 'Smart Filtering',
-      description: 'Filter events by entities, categories, dates, and priority levels.'
+      title: "Smart Filtering",
+      description:
+        "Filter events by entities, categories, dates, and priority levels.",
     },
     {
       icon: MessageSquare,
-      title: 'Chat with your Data',
-      description: 'Interact with your investigation data using natural language queries.'
-    }
+      title: "Chat with your Data",
+      description:
+        "Interact with your investigation data using natural language queries.",
+    },
   ];
 
   return (
@@ -42,19 +70,28 @@ const Index = () => {
               Investigation Timeline Builder
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
-              Transform documents into interactive timelines. Uncover connections, track entities, 
-              and visualize the complete story of your investigation.
+              Transform documents into interactive timelines. Uncover
+              connections, track entities, and visualize the complete story of
+              your investigation.
             </p>
             <Button
               size="lg"
-              onClick={() => navigate('/add-investigation')}
+              onClick={() => navigate("/add-investigation")}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className="bg-primary text-lg px-8 py-3 hover:scale-105 transition-all duration-300 shadow-glow"
             >
-              <Plus className={`h-5 w-5 mr-2 transition-transform ${isHovered ? 'rotate-90' : ''}`} />
+              <Plus
+                className={`h-5 w-5 mr-2 transition-transform ${
+                  isHovered ? "rotate-90" : ""
+                }`}
+              />
               Start New Investigation
-              <ArrowRight className={`h-5 w-5 ml-2 transition-transform ${isHovered ? 'translate-x-1' : ''}`} />
+              <ArrowRight
+                className={`h-5 w-5 ml-2 transition-transform ${
+                  isHovered ? "translate-x-1" : ""
+                }`}
+              />
             </Button>
           </div>
         </div>
@@ -63,9 +100,12 @@ const Index = () => {
       {/* Features Section */}
       <div className="max-w-6xl mx-auto px-6 py-16">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Powerful Investigation Tools</h2>
+          <h2 className="text-3xl font-bold mb-4">
+            Powerful Investigation Tools
+          </h2>
           <p className="text-muted-foreground text-lg">
-            Everything you need to analyze documents and build comprehensive timelines
+            Everything you need to analyze documents and build comprehensive
+            timelines
           </p>
         </div>
 
@@ -85,6 +125,36 @@ const Index = () => {
         </div>
       </div>
 
+      {/* Past CAT Section */}
+      <div className="max-w-full mx-auto px-6 py-16 bg-slate-300 shadow-md">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-4">Existing Investigations</h2>
+          <p className="text-muted-foreground text-lg">
+            You already have {cats.length} investigation
+            {cats.length !== 1 ? "s" : ""} to explore.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 mx-10">
+          {cats.map((cat) => (
+            <Card
+              onClick={() => navigate(`/investigation/${cat.id}`)}
+              key={cat.id}
+              className="bg-gradient-card border-border shadow-card group cursor-pointer"
+            >
+              <span className="relative flex size-5">
+                <span className="absolute inline-flex h-full bottom-2 right-2 w-full animate-ping rounded-full bg-sky-500 opacity-75"></span>
+                <span className="relative inline-flex size-5 bottom-2 right-2 rounded-full bg-sky-700"></span>
+              </span>
+              <h3 className="text-md px-4 font-semibold mb-2 pb-1">{cat.title}</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed pb-2">
+                {cat.description}
+              </p>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       {/* Demo Section */}
       <div className="border-t border-border bg-card/30 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto px-6 py-16">
@@ -96,7 +166,7 @@ const Index = () => {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => navigate('/investigation/1')}
+              onClick={() => navigate("/investigation/1")}
               className="border-primary/30 hover:bg-primary/10 hover:border-primary transition-all"
             >
               <Clock className="h-5 w-5 mr-2" />
