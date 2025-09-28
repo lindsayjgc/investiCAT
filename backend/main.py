@@ -14,6 +14,7 @@ from models import (
     UserDto,
     EntityPostRequest,
     EventPostRequest,
+    DocumentPostRequest
 )
 
 from db import (
@@ -203,20 +204,21 @@ def delete_cat(
     response_model=None,
     responses={'201': {'model': DocumentDto}},
     tags=['Document'],
+    status_code=201,
 )
 def post_document(
-    user_id: str = Path(...), cat_id: str = Path(...), body: DocumentPostRequest = ...
+    user_id: str = Path(...),
+    cat_id: str = Path(...),
+    body: DocumentPostRequest = ...,
 ) -> Union[None, DocumentDto]:
     """
-    Upload a document for a cat (timeline)
+    Upload a document for a cat (timeline); expects JSON { filename, content }
+    where content is base64-encoded file bytes.
     """
     if not fetch_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
-    body.file
-    body.filename
     # In this simplified implementation we accept a filename in a query/body in future; for now use a placeholder
-    filename = "uploaded_document"
-    doc = create_document(user_id, cat_id, filename)
+    doc = create_document(user_id, cat_id, body.filename, body.file)
     if not doc:
         raise HTTPException(status_code=500, detail="Failed to create document")
     return doc
