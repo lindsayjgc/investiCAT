@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import uuid
+from backend.models import DocumentDto
+import tempfile
 from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
 from pathlib import Path
@@ -9,6 +11,8 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[1]))  # add repo root to path
 from etl.document_processor_neo4j import InvestiCATProcessor
 from etl.neo4j_loader import InvestiCATNeo4jLoader
+
+from document_processor import CAT, process_document
 
 # Load .env
 env_path = Path(__file__).resolve().parent.parent / "utilities" / ".env"
@@ -232,32 +236,38 @@ def create_document(user_id: str, cat_id: str, filename: str, content: bytes):
     """
     Create a document node and attach to a cat
     """
-    # query = """
-    # MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-    # CREATE (d:Document {id: $doc_id, filename: $filename})
-    # CREATE (c)-[:HAS_DOCUMENT]->(d)
-    # RETURN d
-    # """
-    # try:
-    #     with driver.session() as session:
-    #         doc_id = str(uuid.uuid4())
-    #         result = session.run(query, user_id=user_id, cat_id=cat_id, doc_id=doc_id, filename=filename)
-    #         if result.peek():
-    #             return dict(result.single()['d'])
-    #         return None
-    # except Neo4jError as e:
-    #     print(f"Neo4j error: {e}")
-    #     return None
+    query = """
+    MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
+    CREATE (d:Document {id: $doc_id, filename: $filename})
+    CREATE (c)-[:HAS_DOCUMENT]->(d)
+    RETURN d
+    """
     try:
-        processor = InvestiCATProcessor()
-        json_data = processor.process_document(filename=filename, content=content)
-
-        loader = InvestiCATNeo4jLoader()
-        loader.load_document_data(json_data)
-        loader.close()
+        with driver.session() as session:
+            doc_id = str(uuid.uuid4())
+            result = session.run(query, user_id=user_id, cat_id=cat_id, doc_id=doc_id, filename=filename)
+            with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                tmp.write(content)
+                tmp_path = tmp.name
+                result_cat = process_document(tmp_path)
+                event_ids = add_events(user_id, cat_id, result_cat)
+            if event_ids:
+                for event_id in event_ids:
+                    session.run(
+                        """
+                        MATCH (d:Document {id: $doc_id}), (ev:Event {id: $event_id})
+                        MERGE (d)-[:MENTIONS]->(ev)
+                        """,
+                        doc_id=doc_id,
+                        event_id=event_id,
+                    )
+            return DocumentDto(id=doc_id, filename=filename)
+    except Neo4jError as e:
+        print(f"Neo4j error: {e}")
         return None
     except Exception as e:
         print(f"ETL processing failed: {e}")
+        return None
 
 
 def fetch_documents(user_id: str, cat_id: str):
@@ -633,6 +643,78 @@ def fetch_cat(user_id: str, cat_id: str):
     except Neo4jError as e:
         print(f"Neo4j error: {e}")
         return
+    
+
+def add_events(user_id: str, cat_id: str, parsed_cat: CAT) -> list[str]:
+    """
+    Add events from a CAT object to a cat, associating with the user and document.
+    """
+    event_ids: list[str] = []
+    try:
+        with driver.session() as session:
+            for ev in parsed_cat.events:
+                ev_id: str = str(uuid.uuid4())
+                title: str = getattr(ev, 'title', None)
+                summary: str = getattr(ev, 'summary', None)
+                date_val: str = ev.date if getattr(ev, 'date', None) else None
+                location: str = getattr(ev, 'location', None)
+                entities: list[str] = getattr(ev, 'entities', None)
+
+                event_ids.append(ev_id)
+
+                # Create or update Event node and attach to Cat
+                event_query = """
+                MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
+                MERGE (ev:Event {id: $ev_id})
+                SET ev.title = $title, ev.summary = $summary
+                MERGE (c)-[:HAS_EVENT]->(ev)
+                RETURN ev
+                """
+                result = session.run(
+                    event_query,
+                    user_id=user_id,
+                    cat_id=cat_id,
+                    ev_id=ev_id,
+                    title=title,
+                    summary=summary,
+                )
+                if not result.peek():
+                    continue
+                created_ev = dict(result.single()['ev'])
+                ev_id = created_ev.get('id')
+
+                # Location: create and attach if provided
+                if getattr(ev, 'location', None):
+                    loc_data: str = ev.location
+                    loc_id = loc_data
+                    address = loc_data
+                    loc_query = """
+                    MATCH (ev:Event {id: $ev_id})
+                    MERGE (loc:Location {id: $loc_id})
+                    SET loc.address = $address
+                    MERGE (ev)-[:OCCURS_AT]->(loc)
+                    RETURN loc
+                    """
+                    session.run(loc_query, ev_id=ev_id, loc_id=loc_id, address=address)
+
+                # Entities: create/merge and attach to cat, then link to event
+                if getattr(ev, 'entities', None):
+                    for ent in ev.entities:
+                        ent_id = ent
+                        name = ent
+                        ent_query = """
+                        MATCH (c:Cat {id: $cat_id})
+                        MERGE (e:Entity {id: $ent_id})
+                        SET e.name = $name
+                        MERGE (c)-[:HAS_ENTITY]->(e)
+                        RETURN e
+                        """
+                        session.run(ent_query, cat_id=cat_id, ent_id=ent_id, name=name)
+            return event_ids
+    except Exception as e:
+        print(f"Neo4j error: {e}")
+        return []
+    return event_ids
 
 def close_driver():
     """
