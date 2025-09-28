@@ -6,15 +6,16 @@ import { EventDetail } from './EventDetail';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { EventDto } from '@/client';
 
 interface TimelineProps {
-  events: Event[];
+  events: EventDto[];
   filter: TimelineFilter;
   onFilterChange: (filter: TimelineFilter) => void;
 }
 
 export const Timeline = ({ events, filter }: TimelineProps) => {
-  const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventDto | null>(null);
   const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
 
   const getEventColor = (category: Event['category']) => {
@@ -45,33 +46,30 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
         if (!hasFilteredEntity) return false;
       }
 
-      // Filter by categories
-      if (filter.categories.length > 0 && !filter.categories.includes(event.category)) {
-        return false;
-      }
+      // // Filter by categories
+      // if (filter.categories.length > 0 && !filter.categories.includes(event.category)) {
+      //   return false;
+      // }
 
-      // Filter by priority
-      if (filter.priority.length > 0 && !filter.priority.includes(event.priority)) {
-        return false;
-      }
+      // // Filter by priority
+      // if (filter.priority.length > 0 && !filter.priority.includes(event.priority)) {
+      //   return false;
+      // }
 
       // Filter by date range
-      if (filter.dateRange.start && event.date < filter.dateRange.start) {
+      if (filter.dateRange.start && new Date(event.date) < filter.dateRange.start) {
         return false;
       }
-      if (filter.dateRange.end && event.date > filter.dateRange.end) {
+      if (filter.dateRange.end && new Date(event.date) > filter.dateRange.end) {
         return false;
       }
 
       return true;
     })
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
+    .sort((a, b) => (new Date(a.date)).getTime() - (new Date(b.date)).getTime());
 
   const getRelatedEvents = (eventId: string) => {
-    return events.filter(event => 
-      event.dependencies.includes(eventId) || 
-      events.find(e => e.id === eventId)?.dependencies.includes(event.id)
-    );
+    return []
   };
 
   const toggleEventExpansion = (eventId: string) => {
@@ -119,16 +117,16 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                   
                   {/* Timeline Dot */}
                   <div 
-                    className={`relative z-10 w-6 h-6 rounded-sm border-4 border-gray cursor-pointer transition-all duration-300 hover:scale-110 ${
-                      isExpanded ? 'bg-primary shadow-glow' : `bg-event-${getEventColor(event.category).replace('event-', '')}`
+                    className={`relative z-10 w-6 h-6 rounded-sm border-4 border-gray cursor-pointer transition-all duration-300 hover:scale-110 
+                      'bg-primary shadow-glow' 
                     }`}
                     onClick={() => toggleEventExpansion(event.id)}
                   >
-                    {getPriorityIcon(event.priority) && (
+                    {/* {getPriorityIcon(event.priority) && (
                       <div className="absolute -bottom-2 -right-2 w-4 h-4 p-0.5 bg-gray-100 rounded-full">
                         <AlertTriangle className="h-3 w-3 text-event-danger" />
                       </div>
-                    )}
+                    )} */}
                     {hasRelationships && (
                       <div className="absolute -top-2 -right-2 w-4 h-4 p-0.5 bg-gray-300 rounded-full">
                         <Link className="relative h-3 w-3" />
@@ -160,12 +158,12 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                           <div className="flex-1">
                             <h3 className="text-sm font-semibold mb-1">{event.title}</h3>
                             <p className="text-xs text-muted-foreground line-clamp-3">
-                              {event.description}
+                              {event.summary}
                             </p>
                           </div>
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium bg-event-${getEventColor(event.category).replace('event-', '')}/20 text-event-${getEventColor(event.category).replace('event-', '')} border border-event-${getEventColor(event.category).replace('event-', '')}/30`}>
+                          {/* <div className={`px-2 py-1 rounded-full text-xs font-medium bg-event-${getEventColor(event.category).replace('event-', '')}/20 text-event-${getEventColor(event.category).replace('event-', '')} border border-event-${getEventColor(event.category).replace('event-', '')}/30`}>
                             {event.category}
-                          </div>
+                          </div> */}
                         </div>
 
                         <div className="space-y-2 text-xs">
@@ -177,7 +175,7 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                           {event.location && (
                             <div className="flex items-center text-muted-foreground">
                               <MapPin className="h-3 w-3 mr-2" />
-                              {event.location}
+                              {event.location.address}
                             </div>
                           )}
                           
@@ -192,12 +190,7 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                             {event.entities.slice(0, 3).map(entity => (
                               <div
                                 key={entity.id}
-                                className="px-2 py-1 rounded text-xs border"
-                                style={{ 
-                                  backgroundColor: `${entity.color}20`,
-                                  borderColor: `${entity.color}40`,
-                                  color: entity.color 
-                                }}
+                                className="px-2 py-1 rounded text-xs border bg-green-700"
                               >
                                 {entity.name}
                               </div>
@@ -211,9 +204,9 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                         )}
 
                         <div className="flex justify-between items-center mt-3 pt-3 border-t border-border">
-                          <div className="text-xs text-muted-foreground">
+                          {/* <div className="text-xs text-muted-foreground">
                             Confidence: {Math.round(event.confidence * 100)}%
-                          </div>
+                          </div> */}
                           <Button 
                             variant="ghost" 
                             size="sm" 

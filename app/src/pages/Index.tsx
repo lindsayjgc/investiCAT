@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { FileText, Search, Clock, Users, ArrowRight, Plus, MessageSquare } from 'lucide-react';
 
 const Index = () => {
   const [isHovered, setIsHovered] = useState(false);
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -45,7 +47,7 @@ const Index = () => {
             </p>
             <Button
               size="lg"
-              onClick={() => window.location.href = '/add-investigation'}
+              onClick={() => navigate('/add-investigation')}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className="bg-primary text-lg px-8 py-3 hover:scale-105 transition-all duration-300 shadow-glow"
@@ -94,7 +96,7 @@ const Index = () => {
             <Button
               variant="outline"
               size="lg"
-              onClick={() => window.location.href = '/investigation'}
+              onClick={() => navigate('/investigation/1')}
               className="border-primary/30 hover:bg-primary/10 hover:border-primary transition-all"
             >
               <Clock className="h-5 w-5 mr-2" />

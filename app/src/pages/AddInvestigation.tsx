@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, FileText, Plus, Folder } from 'lucide-react';
+import { postUserByUserIdCat, postUserByUserIdCatByCatIdDocument } from '@/client';
+import { DEFAULT_USER_ID } from '@/App';
 
 const AddInvestigation = () => {
   const navigate = useNavigate();
@@ -15,10 +17,10 @@ const AddInvestigation = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [isCreating, setIsCreating] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
 
-  const handleFileProcessed = (fileId: string) => {
-    setUploadedFiles(prev => [...prev, fileId]);
+  const handleFilesChanged = (files: File[]) => {
+    setUploadedFiles(files);
   };
 
   const handleCreateInvestigation = async () => {
@@ -34,25 +36,47 @@ const AddInvestigation = () => {
     setIsCreating(true);
     
     try {
-      // Simulate API call to create investigation
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // First create the cat without documents
+      const newCat = await postUserByUserIdCat({ 
+        body: { 
+          title: title.trim(), 
+          ownerId: DEFAULT_USER_ID, 
+          description: description.trim()
+        }, 
+        path: { userId: DEFAULT_USER_ID } 
+      });
       
-      const newInvestigation = {
-        id: crypto.randomUUID(),
-        title: title.trim(),
-        description: description.trim(),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        uploadedFiles: uploadedFiles
-      };
+      const catId = newCat.data.id;
+      
+      if (!catId) {
+        throw new Error('Failed to create investigation - no ID returned');
+      }
+
+      // Upload each file to the created cat
+      const uploadPromises = uploadedFiles.map(async (file) => {
+        try {
+          const result = await postUserByUserIdCatByCatIdDocument({
+            body: { file },
+            path: { userId: DEFAULT_USER_ID, catId }
+          });
+          console.log(`Successfully uploaded document ${file.name} to cat ${catId}`);
+          return result;
+        } catch (error) {
+          console.error(`Failed to upload ${file.name}:`, error);
+          throw error;
+        }
+      });
+      
+      // Wait for all uploads to complete
+      await Promise.all(uploadPromises);
 
       toast({
         title: "Investigation created",
-        description: `"${title}" has been created successfully.`,
+        description: `"${title}" has been created successfully${uploadedFiles.length > 0 ? ` with ${uploadedFiles.length} document(s)` : ''}.`,
       });
 
-      // In a real app, you would navigate to the specific investigation
-      navigate('/investigation');
+      // Navigate to the specific investigation
+      navigate(`/investigation/${catId}`);
     } catch (error) {
       toast({
         title: "Error creating investigation",
@@ -140,7 +164,7 @@ const AddInvestigation = () => {
             </div>
 
             <DocumentUpload 
-              onFileProcessed={handleFileProcessed}
+              onFilesChanged={handleFilesChanged}
             />
           </Card>
 
