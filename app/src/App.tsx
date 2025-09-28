@@ -7,16 +7,25 @@ import Index from "./pages/Index";
 import Investigation from "./pages/Investigation";
 import AddInvestigation from "./pages/AddInvestigation";
 import NotFound from "./pages/NotFound";
+import { CedarCopilot } from 'cedar-os';
+import { FloatingCedarChat } from "./cedar/components/chatComponents/FloatingCedarChat";
 
 const queryClient = new QueryClient();
 
 export const DEFAULT_USER_ID = "1";
 
 const App = () => (
+  <CedarCopilot
+    llmProvider={{
+				provider: 'openai',
+				apiKey: import.meta.env.VITE_OPENAI_API_KEY,
+			}}
+    >
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <FloatingCedarChat />
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -28,6 +37,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </CedarCopilot>
 );
 
 export default App;

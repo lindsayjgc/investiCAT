@@ -41,7 +41,7 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
       // Filter by entities
       if (filter.entities.length > 0) {
         const hasFilteredEntity = event.entities.some(entity => 
-          filter.entities.includes(entity.id)
+          filter.entities.map(e => e.toLowerCase()).includes(entity.name.toLowerCase())
         );
         if (!hasFilteredEntity) return false;
       }
@@ -190,7 +190,7 @@ export const Timeline = ({ events, filter }: TimelineProps) => {
                             {event.entities.slice(0, 3).map(entity => (
                               <div
                                 key={entity.id}
-                                className="px-2 py-1 rounded text-xs border bg-green-700"
+                                className="px-2 py-1 rounded text-xs border bg-green-300"
                               >
                                 {entity.name}
                               </div>

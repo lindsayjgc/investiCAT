@@ -43,8 +43,6 @@ export interface Document {
 
 export interface TimelineFilter {
   entities: string[];
-  categories: string[];
-  priority: string[];
   dateRange: {
     start: Date | null;
     end: Date | null;

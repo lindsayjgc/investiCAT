@@ -38,16 +38,12 @@ export const FilterPanel = ({ filter, entities, onFilterChange, className = '' }
   const clearFilters = () => {
     onFilterChange({
       entities: [],
-      categories: [],
-      priority: [],
       dateRange: { start: null, end: null }
     });
   };
 
-  const activeFiltersCount = 
-    filter.entities.length + 
-    filter.categories.length + 
-    filter.priority.length + 
+  const activeFiltersCount =
+    filter.entities.length +
     (filter.dateRange.start || filter.dateRange.end ? 1 : 0);
 
   return (
@@ -126,82 +122,6 @@ export const FilterPanel = ({ filter, entities, onFilterChange, className = '' }
                   })}
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <Label className="text-sm font-medium flex items-center mb-3">
-              <Tag className="h-4 w-4 mr-2" />
-              Event Categories
-            </Label>
-            <div className="space-y-2">
-              {categories.map(category => (
-                <div key={category.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`category-${category.id}`}
-                    checked={filter.categories.includes(category.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        updateFilter({
-                          categories: [...filter.categories, category.id]
-                        });
-                      } else {
-                        updateFilter({
-                          categories: filter.categories.filter(c => c !== category.id)
-                        });
-                      }
-                    }}
-                  />
-                  <div
-                    className={`w-3 h-3 rounded-full bg-${category.color}`}
-                  />
-                  <Label 
-                    htmlFor={`category-${category.id}`}
-                    className="text-sm cursor-pointer"
-                  >
-                    {category.label}
-                  </Label>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Priority */}
-          <div>
-            <Label className="text-sm font-medium flex items-center mb-3">
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Priority Levels
-            </Label>
-            <div className="space-y-2">
-              {priorities.map(priority => (
-                <div key={priority.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`priority-${priority.id}`}
-                    checked={filter.priority.includes(priority.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        updateFilter({
-                          priority: [...filter.priority, priority.id]
-                        });
-                      } else {
-                        updateFilter({
-                          priority: filter.priority.filter(p => p !== priority.id)
-                        });
-                      }
-                    }}
-                  />
-                  <div
-                    className={`w-3 h-3 rounded-full bg-${priority.color}`}
-                  />
-                  <Label 
-                    htmlFor={`priority-${priority.id}`}
-                    className="text-sm cursor-pointer capitalize"
-                  >
-                    {priority.label}
-                  </Label>
-                </div>
-              ))}
             </div>
           </div>
 
