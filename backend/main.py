@@ -1,6 +1,7 @@
 from typing import List, Union
 from fastapi import HTTPException
 from fastapi import FastAPI, Path, Query
+from fastapi import UploadFile, File, Form 
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -14,6 +15,7 @@ from models import (
     UserDto,
     EntityPostRequest,
     EventPostRequest,
+    DocumentPostRequest
 )
 
 from db import (
@@ -36,7 +38,7 @@ from db import (
     fetch_events,
     associate_event_with_cat,
     remove_event,
-    add_entity_to_event_db,
+    add_entity_to_event,
     fetch_locations,
 )
 
@@ -46,6 +48,9 @@ app = FastAPI(
     description='API for managing cats (timeline), their documents, events, and related entities.',
 )
 
+# ------------------------
+# User Endpoints
+# ------------------------
 
 app.add_middleware(
     CORSMiddleware,
@@ -197,23 +202,27 @@ def delete_cat(
 
 @app.post(
     '/user/{user_id}/cat/{cat_id}/document',
-    response_model=None,
-    responses={'201': {'model': DocumentDto}},
+    response_model=DocumentDto,
     tags=['Document'],
+    status_code=201,
 )
-def post_document(
-    user_id: str = Path(...), cat_id: str = Path(...), body: DocumentPostRequest = ...
-) -> Union[None, DocumentDto]:
+async def post_document(
+    user_id: str = Path(...),
+    cat_id: str = Path(...),
+    file: UploadFile = File(...),           
+    filename: str = Form(...),
+) -> DocumentDto:
     """
-    Upload a document for a cat (timeline)
+    Upload a document for a cat (timeline); accepts multipart/form-data with fields:
+    - file: binary file content
+    - filename: original filename
     """
     if not fetch_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
-    body.file
-    body.filename
-    # In this simplified implementation we accept a filename in a query/body in future; for now use a placeholder
-    filename = "uploaded_document"
-    doc = create_document(user_id, cat_id, filename)
+
+    content = await file.read()
+    print(f"Received file: {filename}, size: {len(content)} bytes")
+    doc = create_document(user_id=user_id, cat_id=cat_id, filename=filename, content=content) 
     if not doc:
         raise HTTPException(status_code=500, detail="Failed to create document")
     return doc
@@ -413,7 +422,7 @@ def add_entity_to_event(
     if not fetch_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
 
-    res = add_entity_to_event_db(user_id, cat_id, event_id, body.entityId)
+    res = add_entity_to_event(user_id, cat_id, event_id, body.entityId)
     if not res:
         raise HTTPException(status_code=500, detail="Failed to add entity to event")
     return {"message": "Entity added to event", "result": res}

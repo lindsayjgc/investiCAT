@@ -147,7 +147,7 @@ const Index = () => {
                 <span className="relative inline-flex size-5 bottom-2 right-2 rounded-full bg-sky-700"></span>
               </span>
               <h3 className="text-md px-4 font-semibold mb-2 pb-1">{cat.title}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed pb-2">
+              <p className="text-muted-foreground text-sm leading-relaxed px-4 pb-2">
                 {cat.description}
               </p>
             </Card>
