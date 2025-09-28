@@ -133,7 +133,7 @@ export const FilterPanel = ({ filter, entities, onFilterChange, className = '' }
                 Entities ({entities.length})
               </Label>
               <div className="space-y-2 max-h-40 overflow-y-auto">
-                {entities.map(entity => (
+                {[...new Set(entities)].map(entity => (
                   <div key={entity} className="flex items-center space-x-2">
                     <Checkbox
                       id={`entity-${entity}`}
