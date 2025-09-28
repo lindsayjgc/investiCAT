@@ -230,6 +230,9 @@ paths:
                 file:
                   type: string
                   format: binary
+                filename:
+                  type: string
+                  description: The name of the file being uploaded
       responses:
         '201':
           description: Document uploaded

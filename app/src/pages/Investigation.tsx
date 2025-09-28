@@ -38,7 +38,7 @@ const Investigation = () => {
     await Promise.all(
       files.map(file =>
       postUserByUserIdCatByCatIdDocument({
-        body: { file },
+        body: { file, filename: file.name },
         path: { userId: DEFAULT_USER_ID, catId: id }
       })
       )
