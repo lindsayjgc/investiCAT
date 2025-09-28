@@ -4,6 +4,11 @@ from dotenv import load_dotenv
 import uuid
 from neo4j import GraphDatabase
 from neo4j.exceptions import Neo4jError
+from pathlib import Path
+import sys
+sys.path.append(str(Path(__file__).resolve().parents[1]))  # add repo root to path
+from etl.document_processor_neo4j import InvestiCATProcessor
+from etl.neo4j_loader import InvestiCATNeo4jLoader
 
 # Load .env
 env_path = Path(__file__).resolve().parent.parent / "utilities" / ".env"
@@ -227,24 +232,32 @@ def create_document(user_id: str, cat_id: str, filename: str, content: bytes):
     """
     Create a document node and attach to a cat
     """
-    query = """
-    MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-    CREATE (d:Document {id: $doc_id, filename: $filename})
-    CREATE (c)-[:HAS_DOCUMENT]->(d)
-    RETURN d
-    """
+    # query = """
+    # MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
+    # CREATE (d:Document {id: $doc_id, filename: $filename})
+    # CREATE (c)-[:HAS_DOCUMENT]->(d)
+    # RETURN d
+    # """
+    # try:
+    #     with driver.session() as session:
+    #         doc_id = str(uuid.uuid4())
+    #         result = session.run(query, user_id=user_id, cat_id=cat_id, doc_id=doc_id, filename=filename)
+    #         if result.peek():
+    #             return dict(result.single()['d'])
+    #         return None
+    # except Neo4jError as e:
+    #     print(f"Neo4j error: {e}")
+    #     return None
     try:
-        with driver.session() as session:
-            doc_id = str(uuid.uuid4())
-            result = session.run(query, user_id=user_id, cat_id=cat_id, doc_id=doc_id, filename=filename)
-            if result.peek():
-                return dict(result.single()['d'])
-            return None
-        # TODO: Send `content` to document processing service here
-        
-    except Neo4jError as e:
-        print(f"Neo4j error: {e}")
+        processor = InvestiCATProcessor()
+        json_data = processor.process_document(filename=filename, content=content)
+
+        loader = InvestiCATNeo4jLoader()
+        loader.load_document_data(json_data)
+        loader.close()
         return None
+    except Exception as e:
+        print(f"ETL processing failed: {e}")
 
 
 def fetch_documents(user_id: str, cat_id: str):

@@ -1,6 +1,7 @@
 from typing import List, Union
 from fastapi import HTTPException
 from fastapi import FastAPI, Path, Query
+from fastapi import UploadFile, File, Form 
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -201,24 +202,27 @@ def delete_cat(
 
 @app.post(
     '/user/{user_id}/cat/{cat_id}/document',
-    response_model=None,
-    responses={'201': {'model': DocumentDto}},
+    response_model=DocumentDto,
     tags=['Document'],
     status_code=201,
 )
-def post_document(
+async def post_document(
     user_id: str = Path(...),
     cat_id: str = Path(...),
-    body: DocumentPostRequest = ...,
-) -> Union[None, DocumentDto]:
+    file: UploadFile = File(...),           
+    filename: str = Form(...),
+) -> DocumentDto:
     """
-    Upload a document for a cat (timeline); expects JSON { filename, content }
-    where content is base64-encoded file bytes.
+    Upload a document for a cat (timeline); accepts multipart/form-data with fields:
+    - file: binary file content
+    - filename: original filename
     """
     if not fetch_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
-    # In this simplified implementation we accept a filename in a query/body in future; for now use a placeholder
-    doc = create_document(user_id, cat_id, body.filename, body.file)
+
+    content = await file.read()
+    print(f"Received file: {filename}, size: {len(content)} bytes")
+    doc = create_document(user_id=user_id, cat_id=cat_id, filename=filename, content=content) 
     if not doc:
         raise HTTPException(status_code=500, detail="Failed to create document")
     return doc
