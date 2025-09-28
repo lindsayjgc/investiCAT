@@ -33,8 +33,8 @@ const Investigation = () => {
     fetchData();
   }, [id]);
 
-  const handleFilesChanged = (files: File[]) => {
-    Promise.all(
+  const handleFilesChanged = async (files: File[]) => {
+    await Promise.all(
       files.map(file =>
       postUserByUserIdCatByCatIdDocument({
         body: { file },
