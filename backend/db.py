@@ -242,14 +242,19 @@ def update_cat(user_id: str, cat_id: str, cat_data):
     """
     Update a cat's properties
     """
-    query = """
-    MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id})
-    SET c.title = $title
+    properties_to_update = []
+    if getattr(cat_data, 'title', None) is not None:
+        properties_to_update.append("SET c.title = $title")
+    if getattr(cat_data, 'description', None) is not None:
+        properties_to_update.append("SET c.description = $description")
+    query = f"""
+    MATCH (u:User {{id: $user_id}})-[:OWNS]->(c:Cat {{id: $cat_id}})
+    {''.join(properties_to_update)}
     RETURN c
     """
     try:
         with driver.session() as session:
-            result = session.run(query, user_id=user_id, cat_id=cat_id, title=cat_data.title)
+            result = session.run(query, user_id=user_id, cat_id=cat_id, title=cat_data.title, description=cat_data.description)
             if result.peek():
                 return dict(result.single()['c'])
             return None
@@ -271,7 +276,7 @@ def remove_cat(user_id: str, cat_id: str):
         print(f"Neo4j error: {e}")
         return False
 
-
+# TODO: must integrate with document processing
 def create_document(user_id: str, cat_id: str, filename: str):
     """
     Create a document node and attach to a cat

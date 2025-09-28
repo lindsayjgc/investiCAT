@@ -27,7 +27,7 @@ class EntityDto(BaseModel):
 
 
 class DocumentPostRequest(BaseModel):
-    file: Optional[bytes] = None
+    content: Optional[bytes] = None
 
 
 class EventPostRequest(BaseModel):
@@ -50,6 +50,7 @@ class EventDto(BaseModel):
 class CatDto(BaseModel):
     id: Optional[str] = None
     title: Optional[str] = None
+    description: Optional[str] = None
     ownerId: Optional[str] = None
     documents: Optional[List[DocumentDto]] = None
     events: Optional[List[EventDto]] = None
