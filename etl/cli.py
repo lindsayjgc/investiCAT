@@ -1,114 +1,137 @@
 #!/usr/bin/env python3
 """
 InvestiCAT Document Processor CLI
-Command-line interface for processing documents into Neo4j format.
+Command-line interface for the ETL document processor
 """
 
-import argparse
-import json
 import sys
+import json
+import argparse
 from pathlib import Path
 from document_processor_neo4j import InvestiCATProcessor
 
 def main():
-    """Command-line interface for document processing."""
     parser = argparse.ArgumentParser(
-        description="InvestiCAT Document Processor - Extract timeline events for Neo4j",
+        description="InvestiCAT Document Processor - ETL for Timeline Extraction",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python cli.py document.pdf -t "Corporate Investigation"
-  python cli.py report.docx -t "Merger Analysis" -o output.json
-  python cli.py file.pdf -t "Investigation" --no-ai
+  %(prog)s document.pdf                          # Process PDF document
+  %(prog)s document.docx -o output.json         # Process DOCX with custom output
+  %(prog)s file.pdf --openai-key YOUR_KEY      # Use OpenAI for extraction
+  %(prog)s file.pdf --pretty                   # Pretty print output to console
+
+Output:
+  Generates Neo4j-compatible JSON with document-level nodes and relationships.
+  Includes: Document, Events, Dates, Locations, Entities, Users
+  
+Note: 
+  This ETL processor handles document-level extraction only.
+  Cat nodes and investigation management are handled by the frontend/API.
         """
     )
     
     parser.add_argument(
-        "file",
-        help="Path to PDF or DOCX file to process"
+        'document',
+        help='Path to PDF or DOCX document to process'
     )
     
     parser.add_argument(
-        "-t", "--title",
-        required=True,
-        help="Investigation title (required)"
+        '-o', '--output',
+        help='Output JSON file path (default: auto-generated)',
+        type=Path
     )
     
     parser.add_argument(
-        "-o", "--output",
-        help="Output JSON file path (default: print to stdout)"
+        '--openai-key',
+        help='OpenAI API key for enhanced event extraction'
     )
     
     parser.add_argument(
-        "--no-ai",
-        action="store_true",
-        help="Use fallback extraction only (no OpenAI)"
+        '--pretty',
+        action='store_true',
+        help='Pretty print output to console instead of saving'
     )
     
     parser.add_argument(
-        "--quiet",
-        action="store_true",
-        help="Suppress progress messages"
+        '--summary',
+        action='store_true', 
+        help='Show processing summary'
     )
     
     args = parser.parse_args()
     
     # Validate input file
-    file_path = Path(args.file)
-    if not file_path.exists():
-        print(f"File not found: {args.file}", file=sys.stderr)
-        return 1
+    input_file = Path(args.document)
+    if not input_file.exists():
+        print(f"Error: Document not found: {input_file}")
+        sys.exit(1)
     
-    if file_path.suffix.lower() not in ['.pdf', '.docx']:
-        print(f"Unsupported file type: {file_path.suffix}", file=sys.stderr)
-        print("Only PDF and DOCX files are supported", file=sys.stderr)
-        return 1
+    if input_file.suffix.lower() not in ['.pdf', '.docx']:
+        print(f"Error: Unsupported file type. Only PDF and DOCX supported.")
+        sys.exit(1)
+    
+    # Initialize processor
+    print(f"Processing document: {input_file.name}")
+    processor = InvestiCATProcessor(openai_api_key=args.openai_key)
     
     try:
-        # Initialize processor
-        api_key = None if args.no_ai else None  # Uses default key from module
-        processor = InvestiCATProcessor(openai_api_key=api_key)
+        # Process document
+        result = processor.process_document(str(input_file))
         
-        # Suppress progress if quiet
-        if args.quiet:
-            import contextlib
-            import io
-            f = io.StringIO()
-            with contextlib.redirect_stdout(f):
-                result = processor.process_document(str(file_path), args.title)
-        else:
-            result = processor.process_document(str(file_path), args.title)
-        
-        # Output results
-        if args.output:
-            with open(args.output, 'w') as f:
-                json.dump(result, f, indent=2)
-            if not args.quiet:
-                print(f"\nResults saved to: {args.output}")
-        else:
+        # Handle output
+        if args.pretty:
+            print("\n" + "="*60)
+            print("NEO4J DOCUMENT STRUCTURE")
+            print("="*60)
             print(json.dumps(result, indent=2))
+        else:
+            # Determine output file
+            if args.output:
+                output_file = args.output
+            else:
+                output_file = input_file.with_suffix('.neo4j.json')
+            
+            # Save results
+            with open(output_file, 'w') as f:
+                json.dump(result, f, indent=2)
+            
+            print(f"Neo4j structure saved to: {output_file}")
         
-        # Print summary unless quiet
-        if not args.quiet and args.output:
+        # Show summary if requested
+        if args.summary or args.pretty:
             nodes = result["nodes"]
-            print(f"\nProcessing Summary:")
-            print(f"   Investigation: {args.title}")
-            print(f"   Document: {file_path.name}")
-            print(f"   Events extracted: {len(nodes['events'])}")
-            print(f"   Entities found: {len(nodes['entities'])}")
-            print(f"   Dates identified: {len(nodes['dates'])}")
-            print(f"   Locations found: {len(nodes['locations'])}")
-            print(f"   Users created: {len(nodes['users'])}")
-            print(f"   Total relationships: {len(result['relationships'])}")
-
-        return 0
-        
+            relationships = result["relationships"]
+            
+            print(f"\n" + "="*40)
+            print("PROCESSING SUMMARY")
+            print("="*40)
+            print(f"Document: {input_file.name}")
+            print(f"Events extracted: {len(nodes['events'])}")
+            print(f"Dates found: {len(nodes['dates'])}")
+            print(f"Locations found: {len(nodes['locations'])}")
+            print(f"Entities found: {len(nodes['entities'])}")
+            print(f"Total relationships: {len(relationships)}")
+            
+            # Show relationship breakdown
+            rel_types = {}
+            for rel in relationships:
+                rel_type = rel['type']
+                rel_types[rel_type] = rel_types.get(rel_type, 0) + 1
+            
+            if rel_types:
+                print(f"\nRelationships by type:")
+                for rel_type, count in sorted(rel_types.items()):
+                    print(f"  {rel_type}: {count}")
+            
+            print(f"\nScope: Document-level ETL (Cat nodes handled by frontend)")
+    
     except Exception as e:
-        print(f"Processing failed: {e}", file=sys.stderr)
-        if not args.quiet:
+        print(f"Error processing document: {e}")
+        if args.pretty:  # Show more detail in pretty mode
             import traceback
             traceback.print_exc()
-        return 1
+        sys.exit(1)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
