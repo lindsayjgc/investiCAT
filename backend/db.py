@@ -251,11 +251,20 @@ def create_document(user_id: str, cat_id: str, filename: str, content: bytes):
     try:
         processor = InvestiCATProcessor()
         json_data = processor.process_document(filename=filename, content=content)
-
+        doc_id = json_data['nodes']['documents'][0]['id']
         loader = InvestiCATNeo4jLoader()
+        loader.connect()
         loader.load_document_data(json_data)
         loader.close()
-        return None
+            # Manually create the relationship to the cat
+        query = """
+        MATCH (u:User {id: $user_id})-[:OWNS]->(c:Cat {id: $cat_id}), (d:Document {id: $doc_id})
+        MERGE (c)-[:HAS_DOCUMENT]->(d)
+        RETURN d
+        """
+        with driver.session() as session:
+            session.run(query, user_id=user_id, cat_id=cat_id, doc_id=doc_id)
+        return json_data
     except Exception as e:
         print(f"ETL processing failed: {e}")
 

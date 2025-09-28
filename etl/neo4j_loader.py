@@ -27,7 +27,7 @@ class InvestiCATNeo4jLoader:
     following the complete InvestiCAT schema.
     """
     
-    def __init__(self, uri: str = "neo4j://localhost:7687", 
+    def __init__(self, uri: str = "neo4j+ssc://4f2f12a1.databases.neo4j.io", 
                  username: str = "neo4j", 
                  password: str = "qfn6NNfwEMRI6s0QuebFri3Pa5LS6-4pxLh3rJHfa74"):
         """
@@ -56,16 +56,17 @@ class InvestiCATNeo4jLoader:
         """
         try:
             self.driver = GraphDatabase.driver(self.uri, auth=(self.username, self.password))
-            
-            # Test connection with a simple query
-            with self.driver.session() as session:
-                result = session.run("RETURN 1 as test")
-                test_value = result.single()["test"]
-                
-                if test_value == 1:
-                    self.connected = True
-                    print(f"Connected to Neo4j database at {self.uri}")
-                    return True
+            self.driver.verify_connectivity()
+            self.connected = True
+            print(f"Connected to Neo4j database at {self.uri}")
+            # # Test connection with a simple query
+            # with self.driver.session() as session:
+            #     result = session.run("RETURN 1 as test")
+            #     test_value = result.single()["test"]
+            #     if test_value == 1:
+            #         self.connected = True
+            #         print(f"Connected to Neo4j database at {self.uri}")
+            return True
                     
         except Exception as e:
             print(f"Failed to connect to Neo4j database: {e}")
