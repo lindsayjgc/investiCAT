@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DocumentDto(BaseModel):
@@ -28,6 +28,9 @@ class EntityDto(BaseModel):
 
 class DocumentPostRequest(BaseModel):
     file: Optional[bytes] = None
+    filename: Optional[str] = Field(
+        None, description='The name of the file being uploaded'
+    )
 
 
 class EventPostRequest(BaseModel):
@@ -50,6 +53,7 @@ class EventDto(BaseModel):
 class CatDto(BaseModel):
     id: Optional[str] = None
     title: Optional[str] = None
+    description: Optional[str] = None
     ownerId: Optional[str] = None
     documents: Optional[List[DocumentDto]] = None
     events: Optional[List[EventDto]] = None

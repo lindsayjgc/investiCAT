@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from models import (
     CatDto,
     DocumentDto,
+    DocumentPostRequest,
     EntityDto,
     EventDto,
     LocationDto,
@@ -201,14 +202,15 @@ def delete_cat(
     tags=['Document'],
 )
 def post_document(
-    user_id: str = Path(...), cat_id: str = Path(...)
+    user_id: str = Path(...), cat_id: str = Path(...), body: DocumentPostRequest = ...
 ) -> Union[None, DocumentDto]:
     """
     Upload a document for a cat (timeline)
     """
     if not fetch_user(user_id):
         raise HTTPException(status_code=404, detail="User not found")
-
+    body.file
+    body.filename
     # In this simplified implementation we accept a filename in a query/body in future; for now use a placeholder
     filename = "uploaded_document"
     doc = create_document(user_id, cat_id, filename)

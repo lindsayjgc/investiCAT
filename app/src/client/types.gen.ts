@@ -241,6 +241,10 @@ export type GetUserByUserIdCatByCatIdDocumentResponse = GetUserByUserIdCatByCatI
 export type PostUserByUserIdCatByCatIdDocumentData = {
     body: {
         file?: Blob | File;
+        /**
+         * The name of the file being uploaded
+         */
+        filename?: string;
     };
     path: {
         userId: string;
