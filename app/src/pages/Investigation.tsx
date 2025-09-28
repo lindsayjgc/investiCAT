@@ -1,20 +1,32 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { DocumentUpload } from "@/components/DocumentUpload";
 import { Timeline } from "@/components/Timeline";
 import { FilterPanel } from "@/components/FilterPanel";
 import { TimelineFilter } from "@/types/investigation";
 import { CatDto } from "@/client/types.gen";
 import { Button } from "@/components/ui/button";
-import { FileText, Clock, Users, Filter, FilterIcon } from "lucide-react";
+import {
+  FileText,
+  Clock,
+  Users,
+  Filter,
+  FilterIcon,
+  ArrowLeft,
+} from "lucide-react";
 import {
   getUserByUserIdCatByCatId,
   postUserByUserIdCatByCatIdDocument,
 } from "@/client";
 import { DEFAULT_USER_ID } from "@/App";
-import { useCedarState, useRegisterState, useSubscribeStateToAgentContext } from "cedar-os";
+import {
+  useCedarState,
+  useSubscribeStateToAgentContext,
+} from "cedar-os";
 
 const Investigation = () => {
+  const navigate = useNavigate();
+
   const INIITIAL_FILTER: TimelineFilter = {
     entities: [],
     dateRange: { start: null, end: null },
@@ -117,37 +129,39 @@ const Investigation = () => {
     },
   });
 
-  useSubscribeStateToAgentContext('filter', 
+  useSubscribeStateToAgentContext(
+    "filter",
     (filter) => ({
-      filter: filter
+      filter: filter,
     }),
     {
       icon: <FilterIcon />,
-      color: '#10B981',
-      labelField: 'entities',
+      color: "#10B981",
+      labelField: "entities",
       showInChat: true,
       collapse: {
         threshold: 0,
         label: `Filter: ${filter.entities.length} entities`,
-      }
+      },
     }
   );
 
-  useSubscribeStateToAgentContext('cat', 
+  useSubscribeStateToAgentContext(
+    "cat",
     (cat) => ({
-      cat: cat
+      cat: cat,
     }),
     {
       icon: <Clock />,
-      color: '#3B82F6',
-      labelField: 'events',
+      color: "#3B82F6",
+      labelField: "events",
       showInChat: true,
       collapse: {
         threshold: 0,
-        label: `${cat?.title || 'Investigation'}`,
-      }
+        label: `${cat?.title || "Investigation"}`,
+      },
     }
-  );  
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -165,11 +179,11 @@ const Investigation = () => {
 
   const handleFilesChanged = async (files: File[]) => {
     await Promise.all(
-      files.map(file =>
-      postUserByUserIdCatByCatIdDocument({
-        body: { file, filename: file.name },
-        path: { userId: DEFAULT_USER_ID, catId: id }
-      })
+      files.map((file) =>
+        postUserByUserIdCatByCatIdDocument({
+          body: { file, filename: file.name },
+          path: { userId: DEFAULT_USER_ID, catId: id },
+        })
       )
     );
 
@@ -214,6 +228,15 @@ const Investigation = () => {
       <div className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="hover:bg-primary/10"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
             <div>
               <h1 className="text-2xl font-bold text-foreground">
                 {cat?.title}
